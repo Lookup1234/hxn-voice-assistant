@@ -1,7 +1,21 @@
 let recognition;
 let isListening = false;
+let openedWindows = []; // Track opened windows to close or focus back if needed
 
 const reminders = [];
+const coinMap = {
+  bitcoin: "bitcoin",
+  btc: "bitcoin",
+  ethereum: "ethereum",
+  eth: "ethereum",
+  bnb: "binancecoin",
+  binancecoin: "binancecoin",
+  dogecoin: "dogecoin",
+  doge: "dogecoin",
+  litecoin: "litecoin",
+  ltc: "litecoin",
+  // add more as needed
+};
 
 function startListening() {
   if (isListening) return;
@@ -46,6 +60,7 @@ function stopListening() {
 
 function speak(text) {
   const synth = window.speechSynthesis;
+  if (!text) return;
   const utterance = new SpeechSynthesisUtterance(text);
   synth.speak(utterance);
 }
@@ -100,10 +115,37 @@ function getCryptoPrice(coin) {
     });
 }
 
+// Helper to open link in new window/tab and track it
+function openLink(url) {
+  // Open in new tab/window and keep track of window reference
+  const newWin = window.open(url, "_blank");
+  if (newWin) {
+    openedWindows.push(newWin);
+  }
+}
+
+// Close all opened windows (if still open)
+function closeAllOpenedWindows() {
+  openedWindows = openedWindows.filter(win => {
+    if (!win.closed) {
+      win.close();
+      return false;
+    }
+    return false;
+  });
+  openedWindows = [];
+}
+
+function respond(text) {
+  speak(text);
+  document.getElementById("ai-text").textContent = text;
+}
+
 function respondToCommand(text) {
+  text = text.toLowerCase();
   let response = "Sorry, I didn't catch that.";
 
-  // Reminder command
+  // Reminders
   if (text.includes("remind me to")) {
     const remindText = text.match(/remind me to (.+) in (\d+) (second|seconds|minute|minutes|hour|hours)/);
     if (remindText) {
@@ -125,54 +167,71 @@ function respondToCommand(text) {
       response = "Please specify what to remind and when, like 'remind me to call mom in 10 minutes.'";
     }
   }
-  // Basic greetings & info
-  else if (text.includes("hello")) {
-    response = "Hello! I'm your HXN voice assistant.";
-  } else if (text.includes("how are you")) {
-    response = "I'm functioning perfectly, thanks!";
-  } else if (text.includes("time")) {
+  // Greetings & basic info
+  else if (/hello|hi|hey/.test(text)) {
+    response = "Hello! How can I help you today?";
+  }
+  else if (text.includes("how are you")) {
+    response = "I'm doing great, thanks for asking!";
+  }
+  else if (text.includes("time")) {
     response = "It's " + new Date().toLocaleTimeString();
-  } else if (text.includes("date")) {
+  }
+  else if (text.includes("date")) {
     response = "Today's date is " + new Date().toLocaleDateString();
-  } else if (text.includes("your name")) {
+  }
+  else if (text.includes("your name")) {
     response = "I am HXN, your helpful voice assistant!";
-  } else if (text.includes("tell me a joke")) {
+  }
+  else if (text.includes("tell me a joke")) {
     response = "Why don't robots panic? Because they’ve got nerves of steel!";
   }
   // Wikipedia info
-  else if (text.startsWith("tell me about ")) {
-    const topic = text.replace("tell me about ", "").trim();
+  else if (text.startsWith("tell me about ") || text.startsWith("who is ") || text.startsWith("what is ")) {
+    const topic = text.replace(/tell me about |who is |what is /, "").trim();
     getWikipediaSummary(topic);
     response = `Searching Wikipedia for ${topic}`;
   }
   // Crypto price lookup
   else if (text.includes("price of")) {
-    // Extract crypto coin name
     const match = text.match(/price of ([a-zA-Z0-9]+)/);
     if (match) {
-      const coin = match[1].toLowerCase();
-      getCryptoPrice(coin);
-      response = `Getting price of ${coin}`;
+      const inputCoin = match[1].toLowerCase();
+      const coin = coinMap[inputCoin];
+      if (coin) {
+        getCryptoPrice(coin);
+        response = `Getting price of ${inputCoin}`;
+      } else {
+        response = `Sorry, I don't have data for ${inputCoin}`;
+        respond(response);
+        return;
+      }
     }
   }
   // Play song on YouTube
   else if (text.startsWith("play ")) {
     const song = text.replace("play ", "").trim();
     response = `Playing ${song} on YouTube.`;
-    window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(song)}`, "_blank");
+    openLink(`https://www.youtube.com/results?search_query=${encodeURIComponent(song)}`);
   }
   // Open Google News
   else if (text.includes("news")) {
     response = "Opening today's top news headlines for you.";
-    window.open("https://news.google.com", "_blank");
+    openLink("https://news.google.com");
+  }
+  // Return to home page
+  else if (text.includes("go back home") || text.includes("return home") || text.includes("go home")) {
+    response = "Returning to the assistant home page.";
+    closeAllOpenedWindows();
+    window.focus();
   }
   // Stop listening
-  else if (text.includes("stop listening")) {
-    response = "Muting now. Say 'start listening' again to wake me.";
+  else if (text.includes("stop listening") || text.includes("mute")) {
+    response = "Muting now. Say 'start listening' to wake me.";
     stopListening();
   }
   // Start listening
-  else if (text.includes("start listening")) {
+  else if (text.includes("start listening") || text.includes("wake up")) {
     if (!isListening) {
       startListening();
       response = "I'm back and listening!";
@@ -180,12 +239,11 @@ function respondToCommand(text) {
       response = "I'm already listening!";
     }
   }
-  // Fallback: Google Search
+  // Fallback - Google Search
   else {
-    response = `I didn't find an exact answer, searching Google for "${text}"`;
-    window.open(`https://www.google.com/search?q=${encodeURIComponent(text)}`, "_blank");
+    response = `I didn't find an exact answer. Searching Google for "${text}"`;
+    openLink(`https://www.google.com/search?q=${encodeURIComponent(text)}`);
   }
 
-  speak(response);
-  document.getElementById("ai-text").textContent = response;
+  respond(response);
 }
