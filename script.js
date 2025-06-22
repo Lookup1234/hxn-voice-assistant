@@ -275,6 +275,17 @@ function respondToCommand(text) {
     }
     return;
   }
+function closeIframe() {
+  const frame = document.getElementById("ai-frame");
+  const closeBtn = document.getElementById("close-frame-btn");
+  if (frame) {
+    frame.src = "";
+    frame.style.display = "none";
+  }
+  if (closeBtn) {
+    closeBtn.style.display = "none";
+  }
+}
 
   // Fallback - Google Search only if no other command matched
   respond(`I didn't find an exact answer. Searching Google for "${text}"`);
