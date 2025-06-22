@@ -1,13 +1,60 @@
+/* Futuristic Jarvis-style interface */
 body {
-  font-family: Arial, sans-serif;
+  font-family: 'Orbitron', sans-serif;
   text-align: center;
   padding: 40px;
-  background-color: #f0f8ff;
+  background: radial-gradient(ellipse at center, #0f2027, #203a43, #2c5364);
+  color: #00ffe1;
+  min-height: 100vh;
+  overflow-x: hidden;
 }
 
+/* Headline styling */
+h1 {
+  font-size: 38px;
+  color: #00ffe1;
+  text-shadow: 0 0 5px #00ffe1, 0 0 10px #00c9ff;
+  margin-bottom: 30px;
+}
+
+/* Status, user, and AI text */
+#status, #user-text, #ai-text {
+  font-size: 18px;
+  margin-top: 20px;
+  color: #7df9ff;
+  text-shadow: 0 0 3px #7df9ff;
+}
+
+/* Strong tag styling */
+strong {
+  color: #00f5ff;
+}
+
+/* Buttons - glowing neon look */
 button {
   font-size: 18px;
-  padding: 10px 20px;
-  margin-top: 20px;
+  padding: 12px 24px;
+  margin: 15px;
+  border: 2px solid #00ffe1;
+  background-color: transparent;
+  color: #00ffe1;
+  border-radius: 10px;
   cursor: pointer;
+  box-shadow: 0 0 10px #00ffe1, 0 0 20px #00c9ff, inset 0 0 5px #00ffe1;
+  transition: 0.3s;
+}
+
+button:hover {
+  background-color: rgba(0, 255, 225, 0.1);
+  box-shadow: 0 0 15px #00ffe1, 0 0 30px #00c9ff;
+  transform: scale(1.05);
+}
+
+/* Voice text sections */
+#user-text, #ai-text {
+  font-size: 22px;
+  margin: 10px 0;
+  font-style: italic;
+  color: #00f5ff;
+  text-shadow: 0 0 4px #00f5ff;
 }
