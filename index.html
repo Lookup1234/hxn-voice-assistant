@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <title>HXN Voice Assistant</title>
   <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600&display=swap" rel="stylesheet" />
 </head>
 <body>
   <h1>🤖 HXN Voice Assistant</h1>
@@ -15,6 +16,14 @@
 
   <p><strong>You said:</strong> <span id="user-text">...</span></p>
   <p><strong>AI Response:</strong> <span id="ai-text">...</span></p>
+
+  <!-- 🖼️ Image Upload Section -->
+  <div style="margin-top: 40px;">
+    <h2>🧠 Upload an Image for AI Analysis</h2>
+    <input type="file" id="imageInput" accept="image/*" />
+    <p id="imageResult">No image analyzed yet.</p>
+    <img id="previewImage" src="" style="display:none; margin-top:20px; max-width:300px; border: 2px solid #00ffe1;" />
+  </div>
 
   <script src="script.js"></script>
 </body>
