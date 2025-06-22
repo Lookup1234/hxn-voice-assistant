@@ -275,6 +275,11 @@ function respondToCommand(text) {
     }
     return;
   }
+
+  // Fallback - Google Search only if no other command matched
+  respond(`I didn't find an exact answer. Searching Google for "${text}"`);
+  openLink(`https://www.google.com/search?q=${encodeURIComponent(text)}`);
+}
 function closeIframe() {
   const frame = document.getElementById("ai-frame");
   const closeBtn = document.getElementById("close-frame-btn");
@@ -287,7 +292,3 @@ function closeIframe() {
   }
 }
 
-  // Fallback - Google Search only if no other command matched
-  respond(`I didn't find an exact answer. Searching Google for "${text}"`);
-  openLink(`https://www.google.com/search?q=${encodeURIComponent(text)}`);
-}
