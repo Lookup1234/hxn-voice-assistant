@@ -86,3 +86,24 @@ function stopListening() {
     document.getElementById("status").textContent = "🔇 Muted. Say 'start listening' or click button to reactivate.";
   }
 }
+// Handle image upload and simulate AI analysis
+document.getElementById("imageInput").addEventListener("change", function(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = document.getElementById("previewImage");
+    img.src = e.target.result;
+    img.style.display = "block";
+
+    // Simulate AI image analysis result (you can replace this with real ML logic or API)
+    const fakeAnalysis = "This image looks like a mysterious futuristic object. 🤖";
+    document.getElementById("imageResult").textContent = fakeAnalysis;
+
+    // Speak it out
+    speak(fakeAnalysis);
+    document.getElementById("ai-text").textContent = fakeAnalysis;
+  };
+  reader.readAsDataURL(file);
+});
