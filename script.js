@@ -114,8 +114,9 @@ function getCryptoPrice(coin) {
 }
 
 function openLink(url) {
-  const newWin = window.open(url, "_blank");
-  if (newWin) openedWindows.push(newWin);
+  const frame = document.getElementById("ai-frame");
+  frame.src = url;
+  frame.style.display = "block";
 }
 
 function closeAllOpenedWindows() {
