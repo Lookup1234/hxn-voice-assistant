@@ -149,7 +149,7 @@ function respondToCommand(text) {
     closeBtn.style.display = "none";
   }
 
-  // Reminder command
+  // Reminder
   if (text.includes("remind me to")) {
     const remindText = text.match(/remind me to (.+) in (\d+) (second|seconds|minute|minutes|hour|hours)/);
     if (remindText) {
@@ -174,7 +174,7 @@ function respondToCommand(text) {
     }
   }
 
-  // Greetings & basics
+  // Greetings
   if (/hello|hi|hey/.test(text)) {
     respond("Hello! How can I help you today?");
     return;
@@ -205,11 +205,7 @@ function respondToCommand(text) {
     return;
   }
 
-  // You can continue adding more commands below as needed...
-}
-
-
-  // Wikipedia queries - aggressive fallback
+  // Wikipedia search
   if (/what is|who is|tell me about|explain|define/.test(text)) {
     const topic = text.replace(/what is|who is|tell me about|explain|define/, "").trim();
     if (topic.length > 0) {
@@ -219,7 +215,7 @@ function respondToCommand(text) {
     }
   }
 
-  // Crypto price lookup
+  // Crypto price
   if (text.includes("price of")) {
     const match = text.match(/price of ([a-zA-Z0-9]+)/);
     if (match) {
@@ -243,14 +239,14 @@ function respondToCommand(text) {
     return;
   }
 
-  // Open Google News
+  // Open news
   if (text.includes("news")) {
     respond("Opening today's top news headlines for you.");
     openLink("https://news.google.com");
     return;
   }
 
-  // Return to home page
+  // Return home
   if (text.includes("go back home") || text.includes("return home") || text.includes("go home")) {
     respond("Returning to the assistant home page.");
     closeAllOpenedWindows();
@@ -276,7 +272,7 @@ function respondToCommand(text) {
     return;
   }
 
-  // Fallback - Google Search only if no other command matched
+  // ❗ Fallback - Google Search
   respond(`I didn't find an exact answer. Searching Google for "${text}"`);
   openLink(`https://www.google.com/search?q=${encodeURIComponent(text)}`);
 }
@@ -291,4 +287,3 @@ function closeIframe() {
     closeBtn.style.display = "none";
   }
 }
-
