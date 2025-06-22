@@ -138,6 +138,17 @@ function respond(text) {
 function respondToCommand(text) {
   text = text.toLowerCase();
 
+  // ✅ Auto-close iframe (webview) on any new command
+  const frame = document.getElementById("ai-frame");
+  const closeBtn = document.getElementById("close-frame-btn");
+  if (frame) {
+    frame.src = "";
+    frame.style.display = "none";
+  }
+  if (closeBtn) {
+    closeBtn.style.display = "none";
+  }
+
   // Reminder command
   if (text.includes("remind me to")) {
     const remindText = text.match(/remind me to (.+) in (\d+) (second|seconds|minute|minutes|hour|hours)/);
@@ -193,6 +204,10 @@ function respondToCommand(text) {
     respond("Why don't robots panic? Because they’ve got nerves of steel!");
     return;
   }
+
+  // You can continue adding more commands below as needed...
+}
+
 
   // Wikipedia queries - aggressive fallback
   if (/what is|who is|tell me about|explain|define/.test(text)) {
