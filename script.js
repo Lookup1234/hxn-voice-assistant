@@ -467,6 +467,26 @@ function respondToCommand(text) {
   if (text.includes("what do i like") || text.includes("remember what i like")) return recallUserInterest();
   if (text.includes("forget what i like") || text.includes("clear memory")) return clearMemory();
 
+// 🤣 Jokes
+if (text.includes("tell me a joke") || text.includes("another joke")) {
+  showJokeTypeButton(); // 👈 Show the "Choose Joke Type" button
+  return getJoke(lastJokeCategory || "Any");
+}
+
+// Direct category triggers
+if (text.includes("programming joke")) return getJoke("Programming");
+if (text.includes("pun")) return getJoke("Pun");
+if (text.includes("dark joke")) return getJoke("Dark");
+if (text.includes("spooky joke")) return getJoke("Spooky");
+if (text.includes("joke about christmas")) return getJoke("Christmas");
+
+// Flexible category matcher: e.g., "Tell me a tech joke"
+const jokeMatch = text.match(/(?:tell me a|give me a|say a) (.*?) joke/i);
+if (jokeMatch) {
+  showJokeTypeButton();
+  return getJoke(jokeMatch[1]);
+}
+
 // ☁️ Weather 
 if (
   text.includes("weather in") ||
@@ -505,25 +525,6 @@ if (text.includes("price of") || text.includes("rate of") || text.includes("valu
   if (text.includes("date")) return respond("Today is " + new Date().toLocaleDateString());
   if (text.includes("your name")) return respond("I am HXN, your AI assistant.");
 
-// 🤣 Jokes
-if (text.includes("tell me a joke") || text.includes("another joke")) {
-  showJokeTypeButton(); // 👈 Show the "Choose Joke Type" button
-  return getJoke(lastJokeCategory || "Any");
-}
-
-// Direct category triggers
-if (text.includes("programming joke")) return getJoke("Programming");
-if (text.includes("pun")) return getJoke("Pun");
-if (text.includes("dark joke")) return getJoke("Dark");
-if (text.includes("spooky joke")) return getJoke("Spooky");
-if (text.includes("joke about christmas")) return getJoke("Christmas");
-
-// Flexible category matcher: e.g., "Tell me a tech joke"
-const jokeMatch = text.match(/(?:tell me a|give me a|say a) (.*?) joke/i);
-if (jokeMatch) {
-  showJokeTypeButton();
-  return getJoke(jokeMatch[1]);
-}
 
   // 📰 News
   if (text.includes("latest news") || text.includes("news update")) return getNews();
