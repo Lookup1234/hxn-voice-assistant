@@ -61,36 +61,42 @@ function speak(text, lang = "en") {
   if (!text) return;
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = lang === "hi" ? "hi-IN" : "en-US";
+
+  // Optional: pick correct voice
+  const voices = window.speechSynthesis.getVoices();
+  const voiceMatch = voices.find(v => v.lang === utterance.lang);
+  if (voiceMatch) utterance.voice = voiceMatch;
+
   window.speechSynthesis.speak(utterance);
 }
 
-function respond(text, langOverride = null) {
+async function respond(text, langOverride = null) {
   const userText = document.getElementById("user-text").textContent;
   const detectedLang = langOverride || detectLang(userText);
 
   if (detectedLang === "hi") {
-    // Translate English response to Hindi using LibreTranslate
-    fetch("https://libretranslate.de/translate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        q: text,
-        source: "en",
-        target: "hi",
-        format: "text"
-      })
-    })
-    .then(res => res.json())
-    .then(data => {
+    try {
+      const response = await fetch("https://libretranslate.de/translate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          q: text,
+          source: "en",
+          target: "hi",
+          format: "text"
+        })
+      });
+
+      const data = await response.json();
       const translated = data.translatedText;
+
       speak(translated, "hi");
       document.getElementById("ai-text").textContent = translated;
-    })
-    .catch(err => {
+    } catch (err) {
       console.error("Translation error:", err);
       speak(text, "en");
       document.getElementById("ai-text").textContent = text;
-    });
+    }
   } else {
     speak(text, "en");
     document.getElementById("ai-text").textContent = text;
