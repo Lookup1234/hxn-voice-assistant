@@ -420,11 +420,18 @@ if (text.includes("price of") || text.includes("rate of") || text.includes("valu
     return respond(jokes[Math.floor(Math.random() * jokes.length)]);
   }
 
-  // ☁️ Weather
-  if (text.includes("weather in")) {
-    const m = text.match(/weather in ([a-zA-Z\s]+)/);
-    return m ? getWeather(m[1].trim()) : respond("Say: 'weather in Mumbai'");
+// ☁️ Weather via Google
+if (text.includes("weather in") || text.includes("rain in") || text.includes("temperature in")) {
+  const cityMatch = text.match(/in (.+)/);
+  const city = cityMatch ? cityMatch[1].trim() : null;
+  if (city) {
+    respond(`🌤️ Opening weather information for ${city}...`);
+    openLink(`https://www.google.com/search?q=weather+in+${encodeURIComponent(city)}`);
+  } else {
+    respond("Say the city name like: 'weather in Mumbai'");
   }
+}
+
 
   // 📰 News
   if (text.includes("latest news") || text.includes("news update")) return getNews();
