@@ -1,6 +1,7 @@
 let recognition;
 let isListening = false;
 let openedWindows = [];
+let allCoins = [];
 
 const reminders = [];
 
@@ -211,22 +212,28 @@ function getWikipediaSummary(query, callback) {
     });
 }
 
-let allCoins = [];
-
-async function loadAllCoins() {
+async function loadAllCoinsWithNames() {
   try {
     const res = await fetch("https://api.coingecko.com/api/v3/coins/list");
-    allCoins = await res.json(); // array of { id, symbol, name }
+    allCoins = await res.json(); // [{ id, symbol, name }]
     console.log(`✅ Loaded ${allCoins.length} coins from CoinGecko`);
+
+    // Optional preview in console
+    const formatted = allCoins.map(c => `${capitalize(c.name)} (${c.symbol.toUpperCase()})`);
+    console.log("🔍 Top Coins:", formatted.slice(0, 20));
+    localStorage.setItem("allCoinsList", JSON.stringify(formatted));
   } catch (err) {
     console.error("❌ Failed to load coin list:", err);
   }
 }
 
-function findCoinIdFromUserInput(text) {
-  const cleanedText = text.toLowerCase().trim();
+function capitalize(str) {
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
 
-  // Exact symbol or name match preferred
+function findCoinIdFromUserInput(text) {
+  const cleanedText = text.toLowerCase().trim().replace(/[^\w\s]/gi, "");
+
   return (
     allCoins.find(c => cleanedText === c.symbol.toLowerCase())?.id ||
     allCoins.find(c => cleanedText === c.name.toLowerCase())?.id ||
@@ -240,24 +247,42 @@ function getCryptoPrice(userInput) {
   const coinId = findCoinIdFromUserInput(userInput);
 
   if (!coinId) {
-    respond(`❌ I couldn’t find any coin related to "${userInput}". Try a different name or symbol.`);
+    // Suggest similar coins (top 3 matches)
+    const matches = allCoins
+      .filter(c =>
+        c.name.toLowerCase().includes(userInput.toLowerCase()) ||
+        c.symbol.toLowerCase().includes(userInput.toLowerCase())
+      )
+      .slice(0, 3)
+      .map(c => `${capitalize(c.name)} (${c.symbol.toUpperCase()})`)
+      .join(", ");
+
+    const suggestionMsg = matches
+      ? `❌ I couldn’t find "${userInput}". Did you mean: ${matches}?`
+      : `❌ I couldn’t find any coin related to "${userInput}". Try a different name or symbol.`;
+
+    respond(suggestionMsg);
     return;
   }
 
-  fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${coinId}&vs_currencies=usd`)
+  fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${coinId}&vs_currencies=usd,inr`)
     .then(res => res.json())
     .then(data => {
       if (data[coinId]?.usd) {
-        const price = data[coinId].usd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 8 });
-        respond(`🪙 The current price of ${coinId} is $${price} USD.`);
+        const usd = data[coinId].usd.toLocaleString(undefined, { minimumFractionDigits: 2 });
+        const inr = data[coinId].inr.toLocaleString(undefined, { minimumFractionDigits: 2 });
+
+        respond(`🪙 The current price of ${capitalize(coinId)} is $${usd} USD or ₹${inr} INR.`);
       } else {
-        respond(`⚠️ I couldn’t retrieve the price for ${coinId}.`);
+        respond(`⚠️ I couldn’t retrieve the price for ${capitalize(coinId)}.`);
       }
     })
     .catch(() => respond("🚫 Error fetching cryptocurrency price."));
 }
+
+// Auto-load on page
 window.onload = () => {
-  loadAllCoins();
+  loadAllCoinsWithNames();
 };
 
 
