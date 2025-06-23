@@ -52,9 +52,24 @@ function stopListening() {
   }
 }
 
+function detectLang(text) {
+  // Detect Hindi using Unicode character range (Devanagari block)
+  const hindiChars = /[\u0900-\u097F]/;
+  return hindiChars.test(text) ? "hi-IN" : "en-US";
+}
+
 function speak(text) {
   if (!text) return;
+
+  const langCode = detectLang(text);
   const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = langCode;
+
+  // Match available voice
+  const voices = window.speechSynthesis.getVoices();
+  const matchedVoice = voices.find(v => v.lang === langCode);
+  if (matchedVoice) utterance.voice = matchedVoice;
+
   window.speechSynthesis.speak(utterance);
 }
 
@@ -62,6 +77,7 @@ function respond(text) {
   speak(text);
   document.getElementById("ai-text").textContent = text;
 }
+
 
 function openLink(url) {
   const frame = document.getElementById("ai-frame");
