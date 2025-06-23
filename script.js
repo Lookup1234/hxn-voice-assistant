@@ -205,19 +205,18 @@ function getWikipediaSummary(query, callback) {
     .then(response => response.json())
     .then(data => {
       if (data.extract) {
-        speak(data.extract);
-        document.getElementById('ai-text').textContent = data.extract;
-        if (callback) callback(true); // Wikipedia found content
+        respond(data.extract); // Uses smart detection and speaks accordingly
+        if (callback) callback(true);
       } else {
-        if (callback) callback(false); // Wikipedia did not find
+        if (callback) callback(false);
       }
     })
     .catch(() => {
-      speak("Sorry, I had trouble reaching Wikipedia.");
-      document.getElementById('ai-text').textContent = "Error fetching Wikipedia.";
+      respond("Sorry, I had trouble reaching Wikipedia.");
       if (callback) callback(false);
     });
 }
+
 
 function getCryptoPrice(coin) {
   fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${coin}&vs_currencies=usd`)
