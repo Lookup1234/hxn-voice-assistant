@@ -291,7 +291,6 @@ function respondToCommand(text) {
   if (text.includes("start listening") || text.includes("wake up")) return startListening(), respond("Listening again.");
 
 // Try Wikipedia first before falling back to Google
-// Try Wikipedia first before falling back to Google
 getWikipediaSummary(text, function(found) {
   if (!found) {
     respond(`I didn’t find it on Wikipedia. Searching Google for "${text}"`);
