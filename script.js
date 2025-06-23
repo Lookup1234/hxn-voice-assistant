@@ -412,12 +412,15 @@ function respondToCommand(text) {
 
 function openLink(url) {
   const frame = document.getElementById("ai-frame");
-  if (frame && url.indexOf("google.com") === -1) {
-    // Only use iframe if NOT Google
+
+  // Try iframe if allowed
+  if (frame && !url.includes("google.com")) {
     frame.src = url;
     frame.style.display = "block";
+    document.getElementById("ai-text").innerHTML += `<br><a href="${url}" target="_blank">(Open in new tab)</a>`;
   } else {
-    // For google.com or sites that block iframes, open new tab
-    window.open(url, "_blank");
+    // Fallback for blocked pages like google.com
+    document.getElementById("ai-text").innerHTML = `I found this for you: <a href="${url}" target="_blank">${url}</a>`;
+    speak("I found this. Tap the link to open it.");
   }
 }
