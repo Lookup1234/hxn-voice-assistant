@@ -418,6 +418,13 @@ function respondToCommand(text) {
     }
     return;
   }
+// Try short direct names as Wikipedia lookup
+if (text.split(" ").length <= 3 && /^[a-zA-Z\s]+$/.test(text)) {
+  getWikipediaSummary(text);
+  respond(`I found this. Here's what I found about ${text}.`);
+  return;
+}
+
 
   // Default fallback - Google search
   respond(`I didn't find an exact answer. Searching Google for "${text}"`);
