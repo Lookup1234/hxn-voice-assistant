@@ -354,14 +354,11 @@ function respondToCommand(text) {
   if (text.includes("what do i like") || text.includes("remember what i like")) return recallUserInterest();
   if (text.includes("forget what i like") || text.includes("clear memory")) return clearMemory();
 
-  // 🪙 Prioritize Crypto Price First
-  const possibleCoin = findCoinIdFromUserInput(text);
-  if (possibleCoin) return getCryptoPrice(text);
-
-  if (text.includes("price of") || text.includes("rate of") || text.includes("value of") || text.includes("price")) {
-    const cleaned = text.replace(/price of|rate of|value of|price/gi, "").trim();
-    return getCryptoPrice(cleaned);
-  }
+// 🪙 Crypto Price Queries
+if (text.includes("price of") || text.includes("rate of") || text.includes("value of") || text.includes("price")) {
+  const cleaned = text.replace(/price of|rate of|value of|price/gi, "").trim();
+  return getCryptoPrice(cleaned);
+}
 
   // 📌 Reminders
   if (text.includes("remind me to")) {
