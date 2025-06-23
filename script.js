@@ -2,9 +2,9 @@ let recognition;
 let isListening = false;
 let openedWindows = [];
 let allCoins = [];
+let lastJokeCategory = "Any"; // default
 
 const reminders = [];
-
 
 // Speech Recognition start
 function startListening() {
@@ -298,7 +298,6 @@ function getCryptoPrice(userInput) {
     });
 }
 
-
 // Load coins when page loads
 window.onload = () => {
   loadAllCoinsWithNames();
@@ -321,7 +320,6 @@ function handleManualSearch() {
     getCryptoPrice(input);
   }
 }
-
 
 function getWeather(city) {
   fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(city)}&format=json`)
@@ -358,6 +356,68 @@ function getWeather(city) {
     })
     .catch(() => respond("❌ Error retrieving weather data."));
 }
+
+// Fetch a joke from JokeAPI
+function getJoke(category = "Any") {
+  const url = `https://v2.jokeapi.dev/joke/${encodeURIComponent(category)}?type=single,twopart&blacklistFlags=nsfw,religious,political`;
+
+  fetch(url)
+    .then(res => res.json())
+    .then(data => {
+      if (data.error) {
+        respond("😅 Oops, couldn't find a joke. Try a different category?");
+        return;
+      }
+
+      let jokeText = "";
+      if (data.type === "single") {
+        jokeText = `🤣 ${data.joke}`;
+      } else {
+        jokeText = `😂 ${data.setup} ... ${data.delivery}`;
+      }
+
+      respond(jokeText);
+      setTimeout(() => jokeFollowUp(), 2000);
+      lastJokeCategory = category;
+    })
+    .catch(() => respond("🚫 Failed to fetch a joke."));
+}
+
+// Ask if they want another
+function jokeFollowUp() {
+  const lines = [
+    "Want another one? Just say: 'another joke' 😄",
+    "I’ve got more where that came from! Want a new one?",
+    "Need another laugh?",
+    "Want a different type of joke? Try: 'tell me a pun' or 'dark joke' 😏"
+  ];
+  respond(lines[Math.floor(Math.random() * lines.length)]);
+}
+// === Joke UI Enhancer ===
+
+function showJokeTypeButton() {
+  document.getElementById("jokeTypeBtn").style.display = "inline-block";
+}
+
+function hideJokeTypeButton() {
+  document.getElementById("jokeTypeBtn").style.display = "none";
+}
+
+function showJokeCategoryInput() {
+  hideJokeTypeButton(); // Hide the button once clicked
+  const input = document.getElementById("jokeCategory");
+  input.style.display = "inline-block";
+  input.focus();
+}
+
+document.getElementById("jokeCategory").addEventListener("keydown", function (e) {
+  if (e.key === "Enter") {
+    const category = e.target.value.trim();
+    e.target.value = "";
+    e.target.style.display = "none";
+    getJoke(category);
+  }
+});
 
 function getNews() {
   fetch("https://gnews.io/api/v4/top-headlines?lang=en&country=in&max=3&token=27dbfa23b24a7a7be1f7d75f1e73e4d0")
@@ -444,16 +504,25 @@ if (text.includes("price of") || text.includes("rate of") || text.includes("valu
   if (text.includes("date")) return respond("Today is " + new Date().toLocaleDateString());
   if (text.includes("your name")) return respond("I am HXN, your AI assistant.");
 
-  // 🤣 Jokes
-  if (text.includes("tell me a joke")) {
-    const jokes = [
-      "Why don't robots panic? They’ve got nerves of steel!",
-      "Why did the computer visit the doctor? It had a virus!",
-      "Why do programmers prefer dark mode? Because light attracts bugs!"
-    ];
-    return respond(jokes[Math.floor(Math.random() * jokes.length)]);
-  }
+// 🤣 Jokes
+if (text.includes("tell me a joke") || text.includes("another joke")) {
+  showJokeTypeButton(); // 👈 Show the "Choose Joke Type" button
+  return getJoke(lastJokeCategory || "Any");
+}
 
+// Direct category triggers
+if (text.includes("programming joke")) return getJoke("Programming");
+if (text.includes("pun")) return getJoke("Pun");
+if (text.includes("dark joke")) return getJoke("Dark");
+if (text.includes("spooky joke")) return getJoke("Spooky");
+if (text.includes("joke about christmas")) return getJoke("Christmas");
+
+// Flexible category matcher: e.g., "Tell me a tech joke"
+const jokeMatch = text.match(/(?:tell me a|give me a|say a) (.*?) joke/i);
+if (jokeMatch) {
+  showJokeTypeButton();
+  return getJoke(jokeMatch[1]);
+}
 
   // 📰 News
   if (text.includes("latest news") || text.includes("news update")) return getNews();
