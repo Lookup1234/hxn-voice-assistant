@@ -369,6 +369,46 @@ function respondToCommand(text) {
     return;
   }
 
+// Weather command
+if (text.includes("weather in")) {
+  const cityMatch = text.match(/weather in ([a-zA-Z\s]+)/);
+  if (cityMatch) {
+    const city = cityMatch[1].trim();
+    getWeather(city);
+    respond(`Getting weather in ${city}`);
+  } else {
+    respond("Please say a city name, like 'weather in Delhi'.");
+  }
+  return;
+}
+
+// News command
+if (text.includes("latest news") || text.includes("news update")) {
+  getNews();
+  respond("Fetching the latest news headlines.");
+  return;
+}
+
+// Dictionary lookup
+if (text.startsWith("define ") || text.startsWith("definition of ")) {
+  const word = text.replace("define ", "").replace("definition of ", "").trim();
+  if (word) {
+    getDefinition(word);
+    respond(`Looking up the definition of ${word}`);
+  } else {
+    respond("Please say the word you want to define.");
+  }
+  return;
+}
+
+// Trivia command
+if (text.includes("trivia") || text.includes("quiz") || text.includes("ask me a question")) {
+  getTrivia();
+  respond("Here's a trivia question for you.");
+  return;
+}
+
+
   // Wikipedia queries
   if (/what is|who is|tell me about|explain|define/.test(text)) {
     const topic = text.replace(/what is|who is|tell me about|explain|define/, "").trim();
@@ -403,12 +443,12 @@ function respondToCommand(text) {
     return;
   }
 
-  // Open Google News
-  if (text.includes("news")) {
-    respond("Opening today's top news headlines for you.");
-    openLink("https://news.google.com");
-    return;
-  }
+// Open Google News site
+if (text.includes("open news") || text === "news") {
+  respond("Opening Google News for you.");
+  openLink("https://news.google.com");
+  return;
+}
 
   // Return to home page
   if (text.includes("go back home") || text.includes("return home") || text.includes("go home")) {
