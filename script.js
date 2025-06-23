@@ -377,6 +377,7 @@ function getJoke(category = "Any") {
       }
 
       respond(jokeText);
+      hideJokeTypeButton(); // ✅ Hide dropdown after telling joke
       setTimeout(() => jokeFollowUp(), 2000);
       lastJokeCategory = category;
     })
