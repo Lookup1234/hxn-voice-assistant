@@ -15,7 +15,7 @@ const coinMap = {
 function startListening() {
   if (isListening) return;
   recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-  recognition.lang = "en-US";
+  recognition.lang = "en-IN";
   recognition.continuous = true;
   recognition.interimResults = false;
 
