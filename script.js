@@ -410,14 +410,14 @@ function respondToCommand(text) {
   openLink(`https://www.google.com/search?q=${encodeURIComponent(text)}`);
 }
 
-// Open iframe helper (optional)
 function openLink(url) {
   const frame = document.getElementById("ai-frame");
-  if (frame) {
+  if (frame && url.indexOf("google.com") === -1) {
+    // Only use iframe if NOT Google
     frame.src = url;
     frame.style.display = "block";
   } else {
-    // fallback: open in new tab
+    // For google.com or sites that block iframes, open new tab
     window.open(url, "_blank");
   }
 }
