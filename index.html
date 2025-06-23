@@ -5,6 +5,12 @@
   <title>HXN Voice Assistant</title>
   <link rel="stylesheet" href="style.css" />
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600&display=swap" rel="stylesheet" />
+  <!-- Ensures voices load before speaking -->
+  <script>
+    window.speechSynthesis.onvoiceschanged = () => {
+      window.speechSynthesis.getVoices();
+    };
+  </script>
 </head>
 <body>
   <h1>🤖 HXN Voice Assistant</h1>
