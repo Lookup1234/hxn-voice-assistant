@@ -161,21 +161,22 @@ function extractMainTopic(text) {
 // === API HANDLERS ===
 function getWikipediaSummary(query, callback) {
   fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`)
-    .then(res => res.json())
+    .then(response => response.json())
     .then(data => {
       if (data.extract) {
-        respond(data.extract);
-        if (callback) callback(true);
+        speak(data.extract);
+        document.getElementById('ai-text').textContent = data.extract;
+        if (callback) callback(true); // Wikipedia found content
       } else {
-        if (callback) callback(false);
+        if (callback) callback(false); // Wikipedia did not find
       }
     })
     .catch(() => {
-      respond("Sorry, couldn't reach Wikipedia.");
+      speak("Sorry, I had trouble reaching Wikipedia.");
+      document.getElementById('ai-text').textContent = "Error fetching Wikipedia.";
       if (callback) callback(false);
     });
 }
-
 
 function getCryptoPrice(coin) {
   fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${coin}&vs_currencies=usd`)
@@ -289,11 +290,11 @@ function respondToCommand(text) {
   if (text.includes("stop listening") || text.includes("mute")) return stopListening(), respond("Muted.");
   if (text.includes("start listening") || text.includes("wake up")) return startListening(), respond("Listening again.");
 
- console.log("[HXN] No match found, trying Wikipedia:", text);
-getWikipediaSummary(text, (found) => {
+// Try Wikipedia first before falling back to Google
+getWikipediaSummary(text, function(found) {
   if (!found) {
-    console.log("[HXN] Wikipedia blank, doing Google search:", text);
     respond(`I didn’t find it on Wikipedia. Searching Google for "${text}"`);
     openLink(`https://www.google.com/search?q=${encodeURIComponent(text)}`);
   }
 });
+
