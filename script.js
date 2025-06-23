@@ -235,15 +235,24 @@ function capitalize(str) {
 function findCoinIdFromUserInput(text) {
   const cleanedText = text.toLowerCase().trim().replace(/[^\w\s]/gi, "");
 
-  return (
-    allCoins.find(c => cleanedText === c.symbol.toLowerCase())?.id ||
-    allCoins.find(c => cleanedText === c.name.toLowerCase())?.id ||
-    allCoins.find(c =>
-      cleanedText.includes(c.symbol.toLowerCase()) ||
-      cleanedText.includes(c.name.toLowerCase())
-    )?.id || null
+  // 1. Exact match for symbol
+  let match = allCoins.find(c => cleanedText === c.symbol.toLowerCase());
+  if (match) return match.id;
+
+  // 2. Exact match for name
+  match = allCoins.find(c => cleanedText === c.name.toLowerCase());
+  if (match) return match.id;
+
+  // 3. Starts with (more accurate fallback)
+  match = allCoins.find(c =>
+    cleanedText.startsWith(c.name.toLowerCase()) || cleanedText.startsWith(c.symbol.toLowerCase())
   );
+  if (match) return match.id;
+
+  // No loose includes — avoids false matches
+  return null;
 }
+
 
 function getCryptoPrice(userInput) {
   const coinId = findCoinIdFromUserInput(userInput);
