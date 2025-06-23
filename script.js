@@ -218,12 +218,13 @@ async function loadAllCoinsWithNames() {
     allCoins = await res.json(); // [{ id, symbol, name }]
     console.log(`✅ Loaded ${allCoins.length} coins from CoinGecko`);
 
-    // Optional preview in console
     const formatted = allCoins.map(c => `${capitalize(c.name)} (${c.symbol.toUpperCase()})`);
     console.log("🔍 Top Coins:", formatted.slice(0, 20));
-    localStorage.setItem("allCoinsList", JSON.stringify(formatted));
+
+    localStorage.setItem("allCoinsList", JSON.stringify(allCoins)); // Store full list for future use
   } catch (err) {
     console.error("❌ Failed to load coin list:", err);
+    respond("⚠️ Unable to load cryptocurrency list at the moment.");
   }
 }
 
@@ -238,7 +239,8 @@ function findCoinIdFromUserInput(text) {
     allCoins.find(c => cleanedText === c.symbol.toLowerCase())?.id ||
     allCoins.find(c => cleanedText === c.name.toLowerCase())?.id ||
     allCoins.find(c =>
-      cleanedText.includes(c.symbol.toLowerCase()) || cleanedText.includes(c.name.toLowerCase())
+      cleanedText.includes(c.symbol.toLowerCase()) ||
+      cleanedText.includes(c.name.toLowerCase())
     )?.id || null
   );
 }
@@ -247,8 +249,7 @@ function getCryptoPrice(userInput) {
   const coinId = findCoinIdFromUserInput(userInput);
 
   if (!coinId) {
-    // Suggest similar coins (top 3 matches)
-    const matches = allCoins
+    const suggestions = allCoins
       .filter(c =>
         c.name.toLowerCase().includes(userInput.toLowerCase()) ||
         c.symbol.toLowerCase().includes(userInput.toLowerCase())
@@ -257,8 +258,8 @@ function getCryptoPrice(userInput) {
       .map(c => `${capitalize(c.name)} (${c.symbol.toUpperCase()})`)
       .join(", ");
 
-    const suggestionMsg = matches
-      ? `❌ I couldn’t find "${userInput}". Did you mean: ${matches}?`
+    const suggestionMsg = suggestions
+      ? `❌ I couldn’t find "${userInput}". Did you mean: ${suggestions}?`
       : `❌ I couldn’t find any coin related to "${userInput}". Try a different name or symbol.`;
 
     respond(suggestionMsg);
@@ -268,7 +269,7 @@ function getCryptoPrice(userInput) {
   fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${coinId}&vs_currencies=usd,inr`)
     .then(res => res.json())
     .then(data => {
-      if (data[coinId]?.usd) {
+      if (data[coinId]?.usd && data[coinId]?.inr) {
         const usd = data[coinId].usd.toLocaleString(undefined, { minimumFractionDigits: 2 });
         const inr = data[coinId].inr.toLocaleString(undefined, { minimumFractionDigits: 2 });
 
@@ -280,7 +281,7 @@ function getCryptoPrice(userInput) {
     .catch(() => respond("🚫 Error fetching cryptocurrency price."));
 }
 
-// Auto-load on page
+// Load coins when page loads
 window.onload = () => {
   loadAllCoinsWithNames();
 };
@@ -336,16 +337,24 @@ function getTrivia() {
 
 // === Main command router ===
 function respondToCommand(text) {
-  text = text.toLowerCase();
+  text = text.toLowerCase().trim();
   closeIframe();
 
+  // 🧠 Memory Features
   if (text.startsWith("i like ")) return saveUserInterest(text.replace("i like ", "").trim());
   if (text.includes("what do i like") || text.includes("remember what i like")) return recallUserInterest();
   if (text.includes("forget what i like") || text.includes("clear memory")) return clearMemory();
 
-  const topic = extractMainTopic(text);
-  if (topic) trackTopicFrequency(topic), suggestRelatedTopics(topic);
+  // 🪙 Prioritize Crypto Price First
+  const possibleCoin = findCoinIdFromUserInput(text);
+  if (possibleCoin) return getCryptoPrice(text);
 
+  if (text.includes("price of") || text.includes("rate of") || text.includes("value of") || text.includes("price")) {
+    const cleaned = text.replace(/price of|rate of|value of|price/gi, "").trim();
+    return getCryptoPrice(cleaned);
+  }
+
+  // 📌 Reminders
   if (text.includes("remind me to")) {
     const m = text.match(/remind me to (.+) in (\d+) (second|seconds|minute|minutes|hour|hours)/);
     if (!m) return respond("Say: 'remind me to drink water in 10 minutes'");
@@ -355,11 +364,14 @@ function respondToCommand(text) {
     return respond(`Reminder set for ${task} in ${amt} ${unit}`);
   }
 
+  // 💬 Greetings & Common Questions
   if (/hello|hi|hey/.test(text)) return respond("Hello! How can I help?");
   if (text.includes("how are you")) return respond("I'm great, thanks!");
   if (text.includes("time")) return respond("It's " + new Date().toLocaleTimeString());
   if (text.includes("date")) return respond("Today is " + new Date().toLocaleDateString());
   if (text.includes("your name")) return respond("I am HXN, your AI assistant.");
+
+  // 🤣 Jokes
   if (text.includes("tell me a joke")) {
     const jokes = [
       "Why don't robots panic? They’ve got nerves of steel!",
@@ -368,31 +380,49 @@ function respondToCommand(text) {
     ];
     return respond(jokes[Math.floor(Math.random() * jokes.length)]);
   }
+
+  // ☁️ Weather
   if (text.includes("weather in")) {
     const m = text.match(/weather in ([a-zA-Z\s]+)/);
     return m ? getWeather(m[1].trim()) : respond("Say: 'weather in Mumbai'");
   }
+
+  // 📰 News
   if (text.includes("latest news") || text.includes("news update")) return getNews();
-  if (text.startsWith("define ") || text.startsWith("definition of ")) return getDefinition(text.split(" ").slice(1).join(" "));
+
+  // 📚 Definitions
+  if (text.startsWith("define ") || text.startsWith("definition of ")) {
+    const word = text.split(" ").slice(1).join(" ");
+    return getDefinition(word);
+  }
+
+  // ❓ Trivia
   if (text.includes("trivia") || text.includes("quiz") || text.includes("ask me a question")) return getTrivia();
-  if (/what is|who is|tell me about|explain/.test(text)) return getWikipediaSummary(text.replace(/what is|who is|tell me about|explain/, "").trim());
-if (text.includes("price of") || text.includes("rate of") || text.includes("value of") || text.includes("price")) {
-  const cleaned = text
-    .replace(/price of|rate of|value of|price/gi, "")
-    .trim();
-  return getCryptoPrice(cleaned);
-}
+
+  // 📖 Wikipedia-style queries
+  if (/what is|who is|tell me about|explain/.test(text)) {
+    const query = text.replace(/what is|who is|tell me about|explain/, "").trim();
+    return getWikipediaSummary(query, fallbackToGoogle);
+  }
+
+  // 🎵 YouTube
   if (text.startsWith("play ")) return openLink(`https://www.youtube.com/results?search_query=${encodeURIComponent(text.replace("play ", ""))}`);
+
+  // 🎙️ Voice control
   if (text.includes("stop listening") || text.includes("mute")) return stopListening(), respond("Muted.");
   if (text.includes("start listening") || text.includes("wake up")) return startListening(), respond("Listening again.");
 
-// Try Wikipedia first before falling back to Google
-getWikipediaSummary(text, function(found) {
+  // 🌐 Fallback to Wikipedia → then Google
+  getWikipediaSummary(text, fallbackToGoogle);
+}
+
+// 🔍 Fallback to Google if Wikipedia fails
+function fallbackToGoogle(found) {
   if (!found) {
-    respond(`I didn’t find it on Wikipedia. Searching Google for "${text}"`);
-    openLink(`https://www.google.com/search?q=${encodeURIComponent(text)}`);
+    const query = document.getElementById("user-text").textContent;
+    respond(`I didn’t find it on Wikipedia. Searching Google for "${query}"`);
+    openLink(`https://www.google.com/search?q=${encodeURIComponent(query)}`);
   }
-});
 }
 
 
