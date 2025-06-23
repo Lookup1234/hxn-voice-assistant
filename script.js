@@ -211,38 +211,54 @@ function getWikipediaSummary(query, callback) {
     });
 }
 
+let allCoins = [];
+
+async function loadAllCoins() {
+  try {
+    const res = await fetch("https://api.coingecko.com/api/v3/coins/list");
+    allCoins = await res.json(); // array of { id, symbol, name }
+    console.log(`✅ Loaded ${allCoins.length} coins from CoinGecko`);
+  } catch (err) {
+    console.error("❌ Failed to load coin list:", err);
+  }
+}
+
+function findCoinIdFromUserInput(text) {
+  const cleanedText = text.toLowerCase().trim();
+
+  // Exact symbol or name match preferred
+  return (
+    allCoins.find(c => cleanedText === c.symbol.toLowerCase())?.id ||
+    allCoins.find(c => cleanedText === c.name.toLowerCase())?.id ||
+    allCoins.find(c =>
+      cleanedText.includes(c.symbol.toLowerCase()) || cleanedText.includes(c.name.toLowerCase())
+    )?.id || null
+  );
+}
+
 function getCryptoPrice(userInput) {
-  const coinName = userInput.trim().toLowerCase();
+  const coinId = findCoinIdFromUserInput(userInput);
 
-  // Optional map for common names and symbols
-  const coinMap = {
-    btc: "bitcoin",
-    bitcoin: "bitcoin",
-    eth: "ethereum",
-    ethereum: "ethereum",
-    bnb: "binancecoin",
-    doge: "dogecoin",
-    dogecoin: "dogecoin",
-    ltc: "litecoin",
-    litecoin: "litecoin",
-    sol: "solana",
-    shib: "shiba-inu"
-  };
-
-  const coinId = coinMap[coinName] || coinName;
+  if (!coinId) {
+    respond(`❌ I couldn’t find any coin related to "${userInput}". Try a different name or symbol.`);
+    return;
+  }
 
   fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${coinId}&vs_currencies=usd`)
     .then(res => res.json())
     .then(data => {
       if (data[coinId]?.usd) {
         const price = data[coinId].usd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 8 });
-        respond(`The current price of ${coinName} is $${price} USD.`);
+        respond(`🪙 The current price of ${coinId} is $${price} USD.`);
       } else {
-        respond(`Sorry, I couldn’t find data for "${coinName}". Try another coin.`);
+        respond(`⚠️ I couldn’t retrieve the price for ${coinId}.`);
       }
     })
-    .catch(() => respond("Error fetching cryptocurrency price."));
+    .catch(() => respond("🚫 Error fetching cryptocurrency price."));
 }
+window.onload = () => {
+  loadAllCoins();
+};
 
 
 function getWeather(city) {
