@@ -327,17 +327,21 @@ function getWeather(city) {
   fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(city)}&format=json`)
     .then(res => res.json())
     .then(locationData => {
-      if (!locationData.length) return respond(`Location not found: ${city}`);
+      if (!locationData.length) return respond(`📍 Location not found: ${city}`);
       const { lat, lon } = locationData[0];
       return fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`);
     })
     .then(res => res?.json?.())
     .then(weather => {
       const w = weather?.current_weather;
-      if (!w) return respond(`No weather data.`);
-      respond(`Weather in ${city}: ${w.temperature}°C, Wind ${w.windspeed} km/h`);
+      if (!w) return respond(`⚠️ No weather data found for ${city}.`);
+      respond(`🌤️ Weather in ${capitalize(city)}: ${w.temperature}°C, Wind ${w.windspeed} km/h`);
     })
-    .catch(() => respond("Error getting weather."));
+    .catch(() => respond("🚫 Error getting weather."));
+}
+
+function capitalize(str) {
+  return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
 function getNews() {
@@ -420,15 +424,17 @@ if (text.includes("price of") || text.includes("rate of") || text.includes("valu
     return respond(jokes[Math.floor(Math.random() * jokes.length)]);
   }
 
-// ☁️ Weather via Google
-if (text.includes("weather in") || text.includes("rain in") || text.includes("temperature in")) {
-  const cityMatch = text.match(/in (.+)/);
+// ☁️ Weather 
+if (
+  /(weather|rain|temperature|humidity|fog|snow|storm|wind|climate)/i.test(text) &&
+  text.includes("in")
+) {
+  const cityMatch = text.match(/in ([a-zA-Z\s]+)/);
   const city = cityMatch ? cityMatch[1].trim() : null;
   if (city) {
-    respond(`🌤️ Opening weather information for ${city}...`);
-    openLink(`https://www.google.com/search?q=weather+in+${encodeURIComponent(city)}`);
+    return getWeather(city);
   } else {
-    respond("Say the city name like: 'weather in Mumbai'");
+    return respond("🌍 Please specify a city. Try: 'weather in Delhi'");
   }
 }
 
