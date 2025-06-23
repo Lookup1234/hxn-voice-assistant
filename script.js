@@ -3,13 +3,7 @@ let isListening = false;
 let openedWindows = [];
 
 const reminders = [];
-const coinMap = {
-  bitcoin: "bitcoin", btc: "bitcoin",
-  ethereum: "ethereum", eth: "ethereum",
-  bnb: "binancecoin", binancecoin: "binancecoin",
-  dogecoin: "dogecoin", doge: "dogecoin",
-  litecoin: "litecoin", ltc: "litecoin"
-};
+
 
 // Speech Recognition start
 function startListening() {
@@ -217,19 +211,39 @@ function getWikipediaSummary(query, callback) {
     });
 }
 
+function getCryptoPrice(userInput) {
+  const coinName = userInput.trim().toLowerCase();
 
-function getCryptoPrice(coin) {
-  fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${coin}&vs_currencies=usd`)
+  // Optional map for common names and symbols
+  const coinMap = {
+    btc: "bitcoin",
+    bitcoin: "bitcoin",
+    eth: "ethereum",
+    ethereum: "ethereum",
+    bnb: "binancecoin",
+    doge: "dogecoin",
+    dogecoin: "dogecoin",
+    ltc: "litecoin",
+    litecoin: "litecoin",
+    sol: "solana",
+    shib: "shiba-inu"
+  };
+
+  const coinId = coinMap[coinName] || coinName;
+
+  fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${coinId}&vs_currencies=usd`)
     .then(res => res.json())
     .then(data => {
-      if (data[coin]?.usd) {
-        respond(`Current price of ${coin} is $${data[coin].usd} USD.`);
+      if (data[coinId]?.usd) {
+        const price = data[coinId].usd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 8 });
+        respond(`The current price of ${coinName} is $${price} USD.`);
       } else {
-        respond("Crypto not found.");
+        respond(`Sorry, I couldn’t find data for "${coinName}". Try another coin.`);
       }
     })
-    .catch(() => respond("Error fetching crypto price."));
+    .catch(() => respond("Error fetching cryptocurrency price."));
 }
+
 
 function getWeather(city) {
   fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(city)}&format=json`)
