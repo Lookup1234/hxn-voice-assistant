@@ -235,22 +235,21 @@ function capitalize(str) {
 function findCoinIdFromUserInput(text) {
   const cleanedText = text.toLowerCase().trim().replace(/[^\w\s]/gi, "");
 
-  // 1. Exact match for symbol
-  let match = allCoins.find(c => cleanedText === c.symbol.toLowerCase());
-  if (match) return match.id;
+  // 1. Exact symbol match (BTC, ETH, etc.)
+  const symbolMatch = allCoins.find(c => cleanedText === c.symbol.toLowerCase());
+  if (symbolMatch) return symbolMatch.id;
 
-  // 2. Exact match for name
-  match = allCoins.find(c => cleanedText === c.name.toLowerCase());
-  if (match) return match.id;
+  // 2. Exact name match (Bitcoin, Ethereum)
+  const nameMatch = allCoins.find(c => cleanedText === c.name.toLowerCase());
+  if (nameMatch) return nameMatch.id;
 
-  // 3. Starts with (more accurate fallback)
-  match = allCoins.find(c =>
-    cleanedText.startsWith(c.name.toLowerCase()) || cleanedText.startsWith(c.symbol.toLowerCase())
-  );
-  if (match) return match.id;
+  // 3. Cleaned name includes cleaned text (fallback match, only if safe)
+  const fuzzyMatch = allCoins.find(c => {
+    const cname = c.name.toLowerCase();
+    return cname === cleanedText || cname.split(" ").includes(cleanedText);
+  });
 
-  // No loose includes — avoids false matches
-  return null;
+  return fuzzyMatch?.id || null;
 }
 
 
