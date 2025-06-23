@@ -53,29 +53,48 @@ function stopListening() {
 }
 
 function detectLang(text) {
-  // Detect Hindi using Unicode character range (Devanagari block)
-  const hindiChars = /[\u0900-\u097F]/;
-  return hindiChars.test(text) ? "hi-IN" : "en-US";
+  const devanagariRegex = /[\u0900-\u097F]/;
+  return devanagariRegex.test(text) ? "hi" : "en";
 }
 
-function speak(text) {
+function speak(text, lang = "en") {
   if (!text) return;
-
-  const langCode = detectLang(text);
   const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = langCode;
-
-  // Match available voice
-  const voices = window.speechSynthesis.getVoices();
-  const matchedVoice = voices.find(v => v.lang === langCode);
-  if (matchedVoice) utterance.voice = matchedVoice;
-
+  utterance.lang = lang === "hi" ? "hi-IN" : "en-US";
   window.speechSynthesis.speak(utterance);
 }
 
-function respond(text) {
-  speak(text);
-  document.getElementById("ai-text").textContent = text;
+function respond(text, langOverride = null) {
+  const userText = document.getElementById("user-text").textContent;
+  const detectedLang = langOverride || detectLang(userText);
+
+  if (detectedLang === "hi") {
+    // Translate English response to Hindi using LibreTranslate
+    fetch("https://libretranslate.de/translate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        q: text,
+        source: "en",
+        target: "hi",
+        format: "text"
+      })
+    })
+    .then(res => res.json())
+    .then(data => {
+      const translated = data.translatedText;
+      speak(translated, "hi");
+      document.getElementById("ai-text").textContent = translated;
+    })
+    .catch(err => {
+      console.error("Translation error:", err);
+      speak(text, "en");
+      document.getElementById("ai-text").textContent = text;
+    });
+  } else {
+    speak(text, "en");
+    document.getElementById("ai-text").textContent = text;
+  }
 }
 
 
