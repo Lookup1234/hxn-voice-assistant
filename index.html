@@ -29,6 +29,20 @@
   <button onclick="handleManualSearch()">Search</button>
 </div>
 
+<!-- Joke Type Selector (hidden by default) -->
+<div id="jokeTypeBox" style="display: none; margin-top: 10px;">
+  <label for="jokeCategory">😂 Choose Joke Type:</label>
+  <select id="jokeCategory">
+    <option value="Any">Any</option>
+    <option value="Programming">Programming</option>
+    <option value="Pun">Pun</option>
+    <option value="Dark">Dark</option>
+    <option value="Spooky">Spooky</option>
+    <option value="Christmas">Christmas</option>
+  </select>
+  <button onclick="handleJokeCategory()">Tell me one!</button>
+</div>
+
 
   <!-- 🖼️ Image Upload Section -->
   <div style="margin-top: 40px;">
