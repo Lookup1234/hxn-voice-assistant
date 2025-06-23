@@ -233,24 +233,27 @@ function capitalize(str) {
 }
 
 function findCoinIdFromUserInput(text) {
-  const cleanedText = text.toLowerCase().trim().replace(/[^\w\s]/gi, "");
+  const cleanedText = text.toLowerCase().trim();
 
-  // Exact match for symbol
-  const exactSymbol = allCoins.find(c => cleanedText === c.symbol.toLowerCase());
-  if (exactSymbol) return exactSymbol.id;
+  // Step 1: Try exact match on symbol
+  let match = allCoins.find(c => cleanedText === c.symbol.toLowerCase());
+  if (match) return match.id;
 
-  // Exact match for name
-  const exactName = allCoins.find(c => cleanedText === c.name.toLowerCase());
-  if (exactName) return exactName.id;
+  // Step 2: Try exact match on name
+  match = allCoins.find(c => cleanedText === c.name.toLowerCase());
+  if (match) return match.id;
 
-  // Fuzzy match: starts with name (not includes)
-  const fuzzyName = allCoins.find(c => c.name.toLowerCase().startsWith(cleanedText));
-  if (fuzzyName) return fuzzyName.id;
+  // Step 3: Try 'startsWith' match on name (strong match)
+  match = allCoins.find(c => cleanedText.startsWith(c.name.toLowerCase()));
+  if (match) return match.id;
 
-  // If still no match: return null
-  return null;
+  // Step 4: Try includes (fallback, may give weaker results)
+  match = allCoins.find(c =>
+    cleanedText.includes(c.symbol.toLowerCase()) ||
+    cleanedText.includes(c.name.toLowerCase())
+  );
+  return match?.id || null;
 }
-
 
 function getCryptoPrice(userInput) {
   const coinId = findCoinIdFromUserInput(userInput);
