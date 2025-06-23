@@ -376,11 +376,12 @@ function respondToCommand(text) {
   if (text.startsWith("define ") || text.startsWith("definition of ")) return getDefinition(text.split(" ").slice(1).join(" "));
   if (text.includes("trivia") || text.includes("quiz") || text.includes("ask me a question")) return getTrivia();
   if (/what is|who is|tell me about|explain/.test(text)) return getWikipediaSummary(text.replace(/what is|who is|tell me about|explain/, "").trim());
-  if (text.includes("price of")) {
-    const m = text.match(/price of ([a-zA-Z0-9]+)/);
-    const coin = coinMap[m?.[1]?.toLowerCase()];
-    return coin ? getCryptoPrice(coin) : respond(`I don't have data for ${m?.[1]}`);
-  }
+if (text.includes("price of") || text.includes("rate of") || text.includes("value of") || text.includes("price")) {
+  const cleaned = text
+    .replace(/price of|rate of|value of|price/gi, "")
+    .trim();
+  return getCryptoPrice(cleaned);
+}
   if (text.startsWith("play ")) return openLink(`https://www.youtube.com/results?search_query=${encodeURIComponent(text.replace("play ", ""))}`);
   if (text.includes("stop listening") || text.includes("mute")) return stopListening(), respond("Muted.");
   if (text.includes("start listening") || text.includes("wake up")) return startListening(), respond("Listening again.");
