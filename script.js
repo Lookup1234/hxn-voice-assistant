@@ -259,7 +259,8 @@ function getCryptoPrice(userInput) {
   const coinId = findCoinIdFromUserInput(userInput);
 
   if (!coinId) {
-    const suggestions = allCoins
+    // Suggest similar coins
+    const matches = allCoins
       .filter(c =>
         c.name.toLowerCase().includes(userInput.toLowerCase()) ||
         c.symbol.toLowerCase().includes(userInput.toLowerCase())
@@ -268,33 +269,58 @@ function getCryptoPrice(userInput) {
       .map(c => `${capitalize(c.name)} (${c.symbol.toUpperCase()})`)
       .join(", ");
 
-    const suggestionMsg = suggestions
-      ? `❌ I couldn’t find "${userInput}". Did you mean: ${suggestions}?`
-      : `❌ I couldn’t find any coin related to "${userInput}". Try a different name or symbol.`;
+    const suggestionMsg = matches
+      ? `❌ I couldn’t find "${userInput}". Did you mean: ${matches}?`
+      : `❌ I couldn’t find any coin related to "${userInput}".`;
 
     respond(suggestionMsg);
+    showCoinSearchBox();
     return;
   }
 
   fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${coinId}&vs_currencies=usd,inr`)
     .then(res => res.json())
     .then(data => {
-      if (data[coinId]?.usd && data[coinId]?.inr) {
+      if (data[coinId]?.usd) {
         const usd = data[coinId].usd.toLocaleString(undefined, { minimumFractionDigits: 2 });
         const inr = data[coinId].inr.toLocaleString(undefined, { minimumFractionDigits: 2 });
-
         respond(`🪙 The current price of ${capitalize(coinId)} is $${usd} USD or ₹${inr} INR.`);
       } else {
         respond(`⚠️ I couldn’t retrieve the price for ${capitalize(coinId)}.`);
       }
+
+      // ✅ Always show search bar after crypto response
+      showCoinSearchBox();
     })
-    .catch(() => respond("🚫 Error fetching cryptocurrency price."));
+    .catch(() => {
+      respond("🚫 Error fetching cryptocurrency price.");
+      showCoinSearchBox(); // still show bar even on error
+    });
 }
+
 
 // Load coins when page loads
 window.onload = () => {
   loadAllCoinsWithNames();
 };
+
+// Show coin search box
+function showCoinSearchBox() {
+  document.getElementById("searchBox").style.display = "block";
+}
+
+function hideCoinSearchBox() {
+  document.getElementById("searchBox").style.display = "none";
+  document.getElementById("manualCoin").value = "";
+}
+
+function handleManualSearch() {
+  const input = document.getElementById("manualCoin").value;
+  if (input) {
+    hideCoinSearchBox();
+    getCryptoPrice(input);
+  }
+}
 
 
 function getWeather(city) {
@@ -344,6 +370,12 @@ function getTrivia() {
     })
     .catch(() => respond("Trivia error."));
 }
+
+function respondToCommand(text) {
+  text = text.toLowerCase().trim();
+  hideCoinSearchBox(); // ✅ hide search box by default
+}
+
 
 // === Main command router ===
 function respondToCommand(text) {
