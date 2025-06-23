@@ -329,19 +329,34 @@ function getWeather(city) {
     .then(locationData => {
       if (!locationData.length) return respond(`📍 Location not found: ${city}`);
       const { lat, lon } = locationData[0];
-      return fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`);
+
+      // Request: weather + sunrise/sunset for today
+      const today = new Date().toISOString().split("T")[0];
+      return fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,windspeed_10m_max,sunrise,sunset&timezone=auto`);
     })
     .then(res => res?.json?.())
     .then(weather => {
-      const w = weather?.current_weather;
-      if (!w) return respond(`⚠️ No weather data found for ${city}.`);
-      respond(`🌤️ Weather in ${capitalize(city)}: ${w.temperature}°C, Wind ${w.windspeed} km/h`);
-    })
-    .catch(() => respond("🚫 Error getting weather."));
-}
+      const daily = weather?.daily;
+      if (!daily) return respond(`⛅ No weather data for ${city}.`);
 
-function capitalize(str) {
-  return str.charAt(0).toUpperCase() + str.slice(1);
+      // Use today's index (always [0] from daily)
+      const tMin = daily.temperature_2m_min[0];
+      const tMax = daily.temperature_2m_max[0];
+      const rain = daily.precipitation_sum[0];
+      const wind = daily.windspeed_10m_max[0];
+      const sunrise = new Date(daily.sunrise[0]).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const sunset = new Date(daily.sunset[0]).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      const summary = `🌤️ Today's weather in ${city}:
+- 🌡️ ${tMin}°C to ${tMax}°C
+- 🌧️ Rain: ${rain} mm
+- 💨 Max Wind: ${wind} km/h
+- 🌅 Sunrise: ${sunrise}
+- 🌇 Sunset: ${sunset}`;
+
+      respond(summary);
+    })
+    .catch(() => respond("❌ Error retrieving weather data."));
 }
 
 function getNews() {
@@ -426,16 +441,17 @@ if (text.includes("price of") || text.includes("rate of") || text.includes("valu
 
 // ☁️ Weather 
 if (
-  /(weather|rain|temperature|humidity|fog|snow|storm|wind|climate)/i.test(text) &&
-  text.includes("in")
+  text.includes("weather in") ||
+  text.includes("temperature in") ||
+  text.includes("rain in") ||
+  text.includes("wind in") ||
+  text.includes("climate in") ||
+  text.includes("humidity in") ||
+  text.includes("fog in") ||
+  text.includes("storm in")
 ) {
-  const cityMatch = text.match(/in ([a-zA-Z\s]+)/);
-  const city = cityMatch ? cityMatch[1].trim() : null;
-  if (city) {
-    return getWeather(city);
-  } else {
-    return respond("🌍 Please specify a city. Try: 'weather in Delhi'");
-  }
+  const cleaned = text.replace(/(weather|temperature|rain|wind|climate|humidity|fog|storm) in/gi, "").trim();
+  return getWeather(cleaned);
 }
 
 
