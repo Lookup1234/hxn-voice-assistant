@@ -159,18 +159,23 @@ function extractMainTopic(text) {
 }
 
 // === API HANDLERS ===
-function getWikipediaSummary(query) {
+function getWikipediaSummary(query, callback) {
   fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`)
-    .then(response => response.json())
+    .then(res => res.json())
     .then(data => {
       if (data.extract) {
         respond(data.extract);
+        if (callback) callback(true);
       } else {
-        respond("No info found.");
+        if (callback) callback(false);
       }
     })
-    .catch(() => respond("Error fetching Wikipedia."));
+    .catch(() => {
+      respond("Sorry, couldn't reach Wikipedia.");
+      if (callback) callback(false);
+    });
 }
+
 
 function getCryptoPrice(coin) {
   fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${coin}&vs_currencies=usd`)
@@ -284,6 +289,11 @@ function respondToCommand(text) {
   if (text.includes("stop listening") || text.includes("mute")) return stopListening(), respond("Muted.");
   if (text.includes("start listening") || text.includes("wake up")) return startListening(), respond("Listening again.");
 
-  respond(`I didn’t find an exact answer. Searching Google...`);
-  openLink(`https://www.google.com/search?q=${encodeURIComponent(text)}`);
-}
+ console.log("[HXN] No match found, trying Wikipedia:", text);
+getWikipediaSummary(text, (found) => {
+  if (!found) {
+    console.log("[HXN] Wikipedia blank, doing Google search:", text);
+    respond(`I didn’t find it on Wikipedia. Searching Google for "${text}"`);
+    openLink(`https://www.google.com/search?q=${encodeURIComponent(text)}`);
+  }
+});
