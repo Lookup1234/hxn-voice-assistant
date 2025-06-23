@@ -406,6 +406,21 @@ function respondToCommand(text) {
   if (text.includes("what do i like") || text.includes("remember what i like")) return recallUserInterest();
   if (text.includes("forget what i like") || text.includes("clear memory")) return clearMemory();
 
+// ☁️ Weather 
+if (
+  text.includes("weather in") ||
+  text.includes("temperature in") ||
+  text.includes("rain in") ||
+  text.includes("wind in") ||
+  text.includes("climate in") ||
+  text.includes("humidity in") ||
+  text.includes("fog in") ||
+  text.includes("storm in")
+) {
+  const cleaned = text.replace(/(weather|temperature|rain|wind|climate|humidity|fog|storm) in/gi, "").trim();
+  return getWeather(cleaned);
+}
+
 // 🪙 Crypto Price Queries
 if (text.includes("price of") || text.includes("rate of") || text.includes("value of") || text.includes("price")) {
   const cleaned = text.replace(/price of|rate of|value of|price/gi, "").trim();
@@ -438,21 +453,6 @@ if (text.includes("price of") || text.includes("rate of") || text.includes("valu
     ];
     return respond(jokes[Math.floor(Math.random() * jokes.length)]);
   }
-
-// ☁️ Weather 
-if (
-  text.includes("weather in") ||
-  text.includes("temperature in") ||
-  text.includes("rain in") ||
-  text.includes("wind in") ||
-  text.includes("climate in") ||
-  text.includes("humidity in") ||
-  text.includes("fog in") ||
-  text.includes("storm in")
-) {
-  const cleaned = text.replace(/(weather|temperature|rain|wind|climate|humidity|fog|storm) in/gi, "").trim();
-  return getWeather(cleaned);
-}
 
 
   // 📰 News
