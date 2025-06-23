@@ -1,5 +1,6 @@
 let recognition;
 let isListening = false;
+let openedWindows = []; // Track opened windows to close or focus back if needed
 
 const reminders = [];
 const coinMap = {
@@ -13,21 +14,10 @@ const coinMap = {
   doge: "dogecoin",
   litecoin: "litecoin",
   ltc: "litecoin",
+  // add more coins if needed
 };
 
-const jokes = [
-  "Why don't robots panic? Because they’ve got nerves of steel!",
-  "Why was the math book sad? Because it had too many problems.",
-  "Why did the computer go to the doctor? Because it caught a virus!",
-  "Why do programmers prefer dark mode? Because light attracts bugs!",
-  "Why did the robot cross the road? Because it was programmed by a chicken.",
-  "Why can’t AI keep secrets? Because they always byte their tongue!",
-  "I would tell you a construction joke, but I'm still working on it.",
-  "Why did the smartphone need glasses? Because it lost its contacts."
-];
-
-// Helper functions
-
+// Speech Recognition start
 function startListening() {
   if (isListening) return;
 
@@ -55,12 +45,13 @@ function startListening() {
   };
 
   recognition.onend = () => {
-    if (isListening) recognition.start();
+    if (isListening) recognition.start(); // Restart listening for continuous recognition
   };
 
   recognition.start();
 }
 
+// Stop speech recognition
 function stopListening() {
   if (recognition && isListening) {
     recognition.stop();
@@ -69,13 +60,14 @@ function stopListening() {
   }
 }
 
+// Text-to-speech
 function speak(text) {
   if (!text) return;
   const utterance = new SpeechSynthesisUtterance(text);
   window.speechSynthesis.speak(utterance);
-  document.getElementById("ai-text").textContent = text;
 }
 
+// Reminder feature
 function setReminder(task, delayMs) {
   reminders.push({ task, time: Date.now() + delayMs });
   document.getElementById("reminderStatus").textContent = `Reminder set for: ${task}`;
@@ -87,9 +79,57 @@ function setReminder(task, delayMs) {
   }, delayMs);
 }
 
-// Wikipedia summary
+// Wikipedia summary fetch
 function getWikipediaSummary(query) {
-  // Auto-close iframe if open
+  fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`)
+    .then(response => response.json())
+    .then(data => {
+      if (data.extract) {
+        speak(data.extract);
+        document.getElementById('ai-text').textContent = data.extract;
+      } else {
+        speak("Sorry, I couldn't find information on that topic.");
+        document.getElementById('ai-text').textContent = "No info found.";
+      }
+    })
+    .catch(() => {
+      speak("Sorry, I had trouble reaching Wikipedia.");
+      document.getElementById('ai-text').textContent = "Error fetching Wikipedia.";
+    });
+}
+
+// Crypto price fetch
+function getCryptoPrice(coin) {
+  fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${coin}&vs_currencies=usd`)
+    .then(response => response.json())
+    .then(data => {
+      if (data[coin] && data[coin].usd) {
+        const price = data[coin].usd;
+        const reply = `The current price of ${coin} is $${price} USD.`;
+        speak(reply);
+        document.getElementById('ai-text').textContent = reply;
+      } else {
+        speak("Sorry, I couldn't find that cryptocurrency.");
+        document.getElementById('ai-text').textContent = "Crypto not found.";
+      }
+    })
+    .catch(() => {
+      speak("Sorry, I had trouble fetching cryptocurrency prices.");
+      document.getElementById('ai-text').textContent = "Error fetching crypto.";
+    });
+}
+
+// Open URL in iframe
+function openLink(url) {
+  const frame = document.getElementById("ai-frame");
+  frame.src = url;
+  frame.style.display = "block";
+  const closeBtn = document.getElementById("close-frame-btn");
+  if (closeBtn) closeBtn.style.display = "inline-block";
+}
+
+// Close iframe and hide close button
+function closeIframe() {
   const frame = document.getElementById("ai-frame");
   const closeBtn = document.getElementById("close-frame-btn");
   if (frame) {
@@ -99,182 +139,162 @@ function getWikipediaSummary(query) {
   if (closeBtn) {
     closeBtn.style.display = "none";
   }
-
-  fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`)
-    .then(res => res.json())
-    .then(data => {
-      if (data.extract) {
-        speak(data.extract);
-        document.getElementById("ai-text").textContent = data.extract;
-      } else {
-        speak("Sorry, I couldn't find information on that topic.");
-        document.getElementById("ai-text").textContent = "No information found.";
-      }
-    })
-    .catch(() => {
-      speak("Sorry, I had trouble reaching Wikipedia.");
-      document.getElementById("ai-text").textContent = "Error reaching Wikipedia.";
-    });
 }
 
-// Crypto price
-function getCryptoPrice(coin) {
-  fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${coin}&vs_currencies=usd`)
-    .then(res => res.json())
-    .then(data => {
-      if (data[coin] && data[coin].usd) {
-        const price = data[coin].usd;
-        speak(`The current price of ${coin} is $${price} USD.`);
-      } else {
-        speak("Sorry, I couldn't find that cryptocurrency.");
-      }
-    })
-    .catch(() => {
-      speak("Sorry, I had trouble fetching cryptocurrency prices.");
-    });
+// Close all opened windows (for popups if any)
+function closeAllOpenedWindows() {
+  openedWindows = openedWindows.filter(win => {
+    if (!win.closed) {
+      win.close();
+      return false;
+    }
+    return false;
+  });
+  openedWindows = [];
 }
 
-// Weather info (using OpenWeatherMap free API - you need to get your own API key and insert below)
-const OPENWEATHER_API_KEY = "YOUR_OPENWEATHERMAP_API_KEY";
-
-function getWeather(city) {
-  if (!city) {
-    speak("Please tell me the city name for the weather.");
-    return;
-  }
-  fetch(`https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${OPENWEATHER_API_KEY}&units=metric`)
-    .then(res => res.json())
-    .then(data => {
-      if (data && data.weather) {
-        const desc = data.weather[0].description;
-        const temp = data.main.temp;
-        speak(`The weather in ${city} is ${desc} with a temperature of ${temp} degrees Celsius.`);
-      } else {
-        speak(`Sorry, I couldn't find the weather for ${city}.`);
-      }
-    })
-    .catch(() => {
-      speak("Sorry, I had trouble getting the weather.");
-    });
-}
-
-// News headlines (using NewsAPI free tier — you need your API key)
-const NEWSAPI_KEY = "YOUR_NEWSAPI_KEY";
-
-function getNews() {
-  fetch(`https://newsapi.org/v2/top-headlines?country=us&pageSize=3&apiKey=${NEWSAPI_KEY}`)
-    .then(res => res.json())
-    .then(data => {
-      if (data.articles && data.articles.length > 0) {
-        const headlines = data.articles.map((a, i) => `${i+1}. ${a.title}`).join(" ");
-        speak(`Here are the top news headlines: ${headlines}`);
-      } else {
-        speak("Sorry, I couldn't find any news.");
-      }
-    })
-    .catch(() => {
-      speak("Sorry, I had trouble fetching news.");
-    });
-}
-
-// Dictionary lookup
-function getDefinition(word) {
-  fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`)
-    .then(res => res.json())
-    .then(data => {
-      if (Array.isArray(data) && data.length > 0) {
-        const def = data[0].meanings[0].definitions[0].definition;
-        speak(`Definition of ${word}: ${def}`);
-      } else {
-        speak(`Sorry, I couldn't find the definition of ${word}.`);
-      }
-    })
-    .catch(() => {
-      speak("Sorry, I had trouble getting the definition.");
-    });
-}
-
-// Trivia question
-function getTrivia() {
-  fetch('https://opentdb.com/api.php?amount=1&type=multiple')
-    .then(res => res.json())
-    .then(data => {
-      if (data.results && data.results.length > 0) {
-        const question = data.results[0].question;
-        speak(`Here's a trivia question: ${question}`);
-      } else {
-        speak("Sorry, I couldn't find a trivia question.");
-      }
-    })
-    .catch(() => {
-      speak("Sorry, I had trouble fetching trivia.");
-    });
-}
-
-// Local time of city/timezone
-function getLocalTime(city) {
-  fetch(`http://worldtimeapi.org/api/timezone`)
-    .then(res => res.json())
-    .then(timezones => {
-      const tz = timezones.find(tz => tz.toLowerCase().includes(city.toLowerCase()));
-      if (!tz) {
-        speak(`Sorry, I couldn't find the timezone for ${city}.`);
-        return;
-      }
-      fetch(`http://worldtimeapi.org/api/timezone/${tz}`)
-        .then(res => res.json())
-        .then(data => {
-          if (data.datetime) {
-            const dt = new Date(data.datetime);
-            speak(`The local time in ${city} is ${dt.toLocaleTimeString()}`);
-          } else {
-            speak(`Sorry, couldn't get the local time for ${city}.`);
-          }
-        });
-    })
-    .catch(() => {
-      speak("Sorry, I had trouble fetching the local time.");
-    });
-}
-
+// Respond helper
 function respond(text) {
   speak(text);
+  document.getElementById("ai-text").textContent = text;
 }
 
-// Main command parser
+// USER INTEREST TRACKING — for frequency and suggestions
 
+// Load frequency map from localStorage
+function loadTopicFreq() {
+  const freqStr = localStorage.getItem("topicFrequency");
+  return freqStr ? JSON.parse(freqStr) : {};
+}
+
+// Save frequency map to localStorage
+function saveTopicFreq(freq) {
+  try {
+    localStorage.setItem("topicFrequency", JSON.stringify(freq));
+  } catch {
+    // localStorage full or blocked; optionally clear or ignore
+  }
+}
+
+// Track topic frequency count
+function trackTopicFrequency(topic) {
+  if (!topic) return;
+  const freq = loadTopicFreq();
+  freq[topic] = (freq[topic] || 0) + 1;
+  saveTopicFreq(freq);
+}
+
+// Suggest related topics after repeated queries
+function suggestRelatedTopics(topic) {
+  const freq = loadTopicFreq();
+  if (freq[topic] >= 3) { // after 3 or more times
+    respond(`I've noticed you ask about ${topic} quite a bit. Would you like me to suggest related topics or more details?`);
+  }
+}
+
+// Save user liked topics (memory)
+function saveUserInterest(topic) {
+  if (!topic) {
+    respond("Please tell me what you like after saying 'I like'.");
+    return;
+  }
+  let interests = JSON.parse(localStorage.getItem("userInterests") || "[]");
+  if (!interests.includes(topic)) {
+    interests.push(topic);
+    localStorage.setItem("userInterests", JSON.stringify(interests));
+    respond(`Got it, I will remember that you like ${topic}.`);
+  } else {
+    respond(`I already know you like ${topic}.`);
+  }
+}
+
+// Recall user interests
+function recallUserInterest() {
+  let interests = JSON.parse(localStorage.getItem("userInterests") || "[]");
+  if (interests.length > 0) {
+    respond(`You have told me you like: ${interests.join(", ")}.`);
+  } else {
+    respond("You haven't told me what you like yet.");
+  }
+}
+
+// Clear memory
+function clearMemory() {
+  localStorage.removeItem("userInterests");
+  localStorage.removeItem("topicFrequency");
+  respond("I've cleared my memory of what you like.");
+}
+
+// Extract main topic keyword from user text (simple)
+function extractMainTopic(text) {
+  const removePhrases = ["tell me about", "what is", "who is", "price of", "play", "news", "i like"];
+  let topic = text.toLowerCase();
+  removePhrases.forEach(phrase => {
+    topic = topic.replace(phrase, "");
+  });
+  return topic.trim().split(" ")[0] || ""; // first keyword
+}
+
+// Main command processor
 function respondToCommand(text) {
   text = text.toLowerCase();
 
-  // Auto-close iframe/webview if you have one
-  const frame = document.getElementById("ai-frame");
-  if (frame) {
-    frame.src = "";
-    frame.style.display = "none";
+  // Auto-close iframe (webview) on any new command
+  closeIframe();
+
+  // Save user interest commands
+  if (text.startsWith("i like ")) {
+    const topic = text.replace("i like ", "").trim();
+    saveUserInterest(topic);
+    return;
   }
 
-  // Reminders
+  // Recall user interests
+  if (text.includes("what do i like") || text.includes("do you remember what i like")) {
+    recallUserInterest();
+    return;
+  }
+
+  // Clear memory commands
+  if (
+    text.includes("forget what i like") ||
+    text.includes("clear your memory") ||
+    text.includes("delete memory") ||
+    text.includes("forget memory")
+  ) {
+    clearMemory();
+    return;
+  }
+
+  // Track main topic and suggest if repeated
+  const mainTopic = extractMainTopic(text);
+  if (mainTopic) {
+    trackTopicFrequency(mainTopic);
+    suggestRelatedTopics(mainTopic);
+  }
+
+  // Reminder command
   if (text.includes("remind me to")) {
-    const match = text.match(/remind me to (.+) in (\d+) (second|seconds|minute|minutes|hour|hours)/);
-    if (match) {
-      const task = match[1];
-      const amount = parseInt(match[2]);
-      const unit = match[3];
+    const remindText = text.match(/remind me to (.+) in (\d+) (second|seconds|minute|minutes|hour|hours)/);
+    if (remindText) {
+      const task = remindText[1];
+      const amount = parseInt(remindText[2]);
+      const unit = remindText[3];
       let delayMs = 0;
       if (unit.startsWith("second")) delayMs = amount * 1000;
       else if (unit.startsWith("minute")) delayMs = amount * 60 * 1000;
       else if (unit.startsWith("hour")) delayMs = amount * 60 * 60 * 1000;
+
       if (delayMs > 0) {
         setReminder(task, delayMs);
         respond(`Reminder set: ${task} in ${amount} ${unit}`);
       } else {
         respond("Sorry, I couldn't understand the time for the reminder.");
       }
-      return;
     } else {
       respond("Please specify what to remind and when, like 'remind me to call mom in 10 minutes.'");
-      return;
     }
+    return;
   }
 
   // Greetings
@@ -282,29 +302,45 @@ function respondToCommand(text) {
     respond("Hello! How can I help you today?");
     return;
   }
+
   if (text.includes("how are you")) {
     respond("I'm doing great, thanks for asking!");
     return;
   }
-  if (text.includes("your name")) {
-    respond("I am HXN, your helpful voice assistant!");
-    return;
-  }
+
   if (text.includes("time")) {
     respond("It's " + new Date().toLocaleTimeString());
     return;
   }
+
   if (text.includes("date")) {
     respond("Today's date is " + new Date().toLocaleDateString());
     return;
   }
 
-  // Jokes
+  if (text.includes("your name")) {
+    respond("I am HXN, your helpful voice assistant!");
+    return;
+  }
+
+  // Jokes with variety
   if (text.includes("tell me a joke")) {
+    const jokes = [
+      "Why don't robots panic? Because they’ve got nerves of steel!",
+      "Why was the math book sad? Because it had too many problems.",
+      "Why did the computer go to the doctor? Because it caught a virus!",
+      "Why do programmers prefer dark mode? Because light attracts bugs!",
+      "Why did the robot cross the road? Because it was programmed by a chicken.",
+      "Why can’t AI keep secrets? Because they always byte their tongue!",
+      "I would tell you a construction joke, but I'm still working on it.",
+      "Why did the smartphone need glasses? Because it lost its contacts."
+    ];
     const joke = jokes[Math.floor(Math.random() * jokes.length)];
     respond(joke);
     return;
   }
+
+  // Compliments on joke
   if (
     text.includes("nice joke") ||
     text.includes("good one") ||
@@ -316,7 +352,18 @@ function respondToCommand(text) {
     respond("Glad you liked it! Want to hear another one?");
     return;
   }
+
   if (text === "yes" || text.includes("another one")) {
+    const jokes = [
+      "Why don't robots panic? Because they’ve got nerves of steel!",
+      "Why was the math book sad? Because it had too many problems.",
+      "Why did the computer go to the doctor? Because it caught a virus!",
+      "Why do programmers prefer dark mode? Because light attracts bugs!",
+      "Why did the robot cross the road? Because it was programmed by a chicken.",
+      "Why can’t AI keep secrets? Because they always byte their tongue!",
+      "I would tell you a construction joke, but I'm still working on it.",
+      "Why did the smartphone need glasses? Because it lost its contacts."
+    ];
     const joke = jokes[Math.floor(Math.random() * jokes.length)];
     respond(joke);
     return;
@@ -332,7 +379,7 @@ function respondToCommand(text) {
     }
   }
 
-  // Crypto price
+  // Crypto price lookup
   if (text.includes("price of")) {
     const match = text.match(/price of ([a-zA-Z0-9]+)/);
     if (match) {
@@ -348,56 +395,26 @@ function respondToCommand(text) {
     }
   }
 
-  // Weather query
-  if (text.includes("weather")) {
-    // Try to extract city: e.g. "weather in Mumbai"
-    const cityMatch = text.match(/weather in ([a-zA-Z\s]+)/);
-    const city = cityMatch ? cityMatch[1].trim() : null;
-    getWeather(city);
-    return;
-  }
-
-  // News
-  if (text.includes("news")) {
-    getNews();
-    return;
-  }
-
-  // Dictionary lookup
-  if (text.includes("define") || text.includes("meaning of")) {
-    const wordMatch = text.match(/define ([a-zA-Z]+)/) || text.match(/meaning of ([a-zA-Z]+)/);
-    const word = wordMatch ? wordMatch[1] : null;
-    if (word) {
-      getDefinition(word);
-    } else {
-      respond("Please tell me which word you want me to define.");
-    }
-    return;
-  }
-
-  // Trivia
-  if (text.includes("trivia") || text.includes("quiz")) {
-    getTrivia();
-    return;
-  }
-
-  // Local time in city
-  if (text.includes("local time in")) {
-    const cityMatch = text.match(/local time in ([a-zA-Z\s]+)/);
-    const city = cityMatch ? cityMatch[1].trim() : null;
-    if (city) {
-      getLocalTime(city);
-    } else {
-      respond("Please tell me which city's local time you want.");
-    }
-    return;
-  }
-
   // Play song on YouTube
   if (text.startsWith("play ")) {
     const song = text.replace("play ", "").trim();
     respond(`Playing ${song} on YouTube.`);
     openLink(`https://www.youtube.com/results?search_query=${encodeURIComponent(song)}`);
+    return;
+  }
+
+  // Open Google News
+  if (text.includes("news")) {
+    respond("Opening today's top news headlines for you.");
+    openLink("https://news.google.com");
+    return;
+  }
+
+  // Return to home page
+  if (text.includes("go back home") || text.includes("return home") || text.includes("go home")) {
+    respond("Returning to the assistant home page.");
+    closeAllOpenedWindows();
+    window.focus();
     return;
   }
 
@@ -418,30 +435,8 @@ function respondToCommand(text) {
     }
     return;
   }
-// Try short direct names as Wikipedia lookup
-if (text.split(" ").length <= 3 && /^[a-zA-Z\s]+$/.test(text)) {
-  getWikipediaSummary(text);
-  respond(`I found this. Here's what I found about ${text}.`);
-  return;
-}
 
-
-  // Default fallback - Google search
+  // Fallback - Google Search only if no other command matched
   respond(`I didn't find an exact answer. Searching Google for "${text}"`);
   openLink(`https://www.google.com/search?q=${encodeURIComponent(text)}`);
-}
-
-function openLink(url) {
-  const frame = document.getElementById("ai-frame");
-
-  // Try iframe if allowed
-  if (frame && !url.includes("google.com")) {
-    frame.src = url;
-    frame.style.display = "block";
-    document.getElementById("ai-text").innerHTML += `<br><a href="${url}" target="_blank">(Open in new tab)</a>`;
-  } else {
-    // Fallback for blocked pages like google.com
-    document.getElementById("ai-text").innerHTML = `I found this for you: <a href="${url}" target="_blank">${url}</a>`;
-    speak("I found this. Tap the link to open it.");
-  }
 }
