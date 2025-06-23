@@ -89,17 +89,31 @@ function setReminder(task, delayMs) {
 
 // Wikipedia summary
 function getWikipediaSummary(query) {
+  // Auto-close iframe if open
+  const frame = document.getElementById("ai-frame");
+  const closeBtn = document.getElementById("close-frame-btn");
+  if (frame) {
+    frame.src = "";
+    frame.style.display = "none";
+  }
+  if (closeBtn) {
+    closeBtn.style.display = "none";
+  }
+
   fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`)
     .then(res => res.json())
     .then(data => {
       if (data.extract) {
         speak(data.extract);
+        document.getElementById("ai-text").textContent = data.extract;
       } else {
         speak("Sorry, I couldn't find information on that topic.");
+        document.getElementById("ai-text").textContent = "No information found.";
       }
     })
     .catch(() => {
       speak("Sorry, I had trouble reaching Wikipedia.");
+      document.getElementById("ai-text").textContent = "Error reaching Wikipedia.";
     });
 }
 
