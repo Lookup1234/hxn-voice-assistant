@@ -1,3 +1,14 @@
+const jokes = [
+  "Why don't robots panic? Because they’ve got nerves of steel!",
+  "Why was the math book sad? Because it had too many problems.",
+  "Why did the computer go to the doctor? Because it caught a virus!",
+  "Why do programmers prefer dark mode? Because light attracts bugs!",
+  "Why did the robot cross the road? Because it was programmed by a chicken.",
+  "Why can’t AI keep secrets? Because they always byte their tongue!",
+  "I would tell you a construction joke, but I'm still working on it.",
+  "Why did the smartphone need glasses? Because it lost its contacts."
+];
+
 let recognition;
 let isListening = false;
 let openedWindows = []; // Track opened windows to close or focus back if needed
@@ -204,21 +215,12 @@ if (text.includes("what can you do") || text.includes("what can you do for me"))
     return;
   }
 
- if (text.includes("tell me a joke")) {
-  const jokes = [
-    "Why don't robots panic? Because they’ve got nerves of steel!",
-    "Why was the math book sad? Because it had too many problems.",
-    "Why did the computer go to the doctor? Because it caught a virus!",
-    "Why do programmers prefer dark mode? Because light attracts bugs!",
-    "Why did the robot cross the road? Because it was programmed by a chicken.",
-    "Why can’t AI keep secrets? Because they always byte their tongue!",
-    "I would tell you a construction joke, but I'm still working on it.",
-    "Why did the smartphone need glasses? Because it lost its contacts."
-  ];
+if (text.includes("tell me a joke")) {
   const joke = jokes[Math.floor(Math.random() * jokes.length)];
   respond(joke);
   return;
 }
+
 if (
   text.includes("nice joke") ||
   text.includes("good one") ||
@@ -230,23 +232,12 @@ if (
   respond("Glad you liked it! Want to hear another one?");
   return;
 }
+
 if (text === "yes" || text.includes("another one")) {
-  // Reuse the joke block
-  const jokes = [
-    "Why don't robots panic? Because they’ve got nerves of steel!",
-    "Why was the math book sad? Because it had too many problems.",
-    "Why did the computer go to the doctor? Because it caught a virus!",
-    "Why do programmers prefer dark mode? Because light attracts bugs!",
-    "Why did the robot cross the road? Because it was programmed by a chicken.",
-    "Why can’t AI keep secrets? Because they always byte their tongue!",
-    "I would tell you a construction joke, but I'm still working on it.",
-    "Why did the smartphone need glasses? Because it lost its contacts."
-  ];
   const joke = jokes[Math.floor(Math.random() * jokes.length)];
   respond(joke);
   return;
 }
-
 
   // Wikipedia search
   if (/what is|who is|tell me about|explain|define/.test(text)) {
