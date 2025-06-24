@@ -457,7 +457,7 @@ function respondToCommand(text) {
 }
 
 
-// === Main command router ===
+// === Command Handler ===
 function respondToCommand(text) {
   text = text.toLowerCase().trim();
   closeIframe();
@@ -467,46 +467,28 @@ function respondToCommand(text) {
   if (text.includes("what do i like") || text.includes("remember what i like")) return recallUserInterest();
   if (text.includes("forget what i like") || text.includes("clear memory")) return clearMemory();
 
-// 🤣 Jokes
-if (text.includes("tell me a joke") || text.includes("another joke")) {
-  showJokeTypeButton(); // 👈 Show the "Choose Joke Type" button
-  return getJoke(lastJokeCategory || "Any");
-}
+  // 🤣 Jokes
+  if (text.includes("tell me a joke") || text.includes("another joke")) {
+    showJokeTypeButton();
+    return getJoke(lastJokeCategory || "Any");
+  }
+  const jokeMatch = text.match(/(?:tell me a|give me a|say a) (.*?) joke/i);
+  if (jokeMatch) {
+    showJokeTypeButton();
+    return getJoke(jokeMatch[1]);
+  }
 
-// Direct category triggers
-if (text.includes("programming joke")) return getJoke("Programming");
-if (text.includes("pun")) return getJoke("Pun");
-if (text.includes("dark joke")) return getJoke("Dark");
-if (text.includes("spooky joke")) return getJoke("Spooky");
-if (text.includes("joke about christmas")) return getJoke("Christmas");
+  // ☁️ Weather
+  if (/\b(weather|temperature|rain|wind|climate|humidity|fog|storm) in\b/.test(text)) {
+    const cleaned = text.replace(/(weather|temperature|rain|wind|climate|humidity|fog|storm) in/gi, "").trim();
+    return getWeather(cleaned);
+  }
 
-// Flexible category matcher: e.g., "Tell me a tech joke"
-const jokeMatch = text.match(/(?:tell me a|give me a|say a) (.*?) joke/i);
-if (jokeMatch) {
-  showJokeTypeButton();
-  return getJoke(jokeMatch[1]);
-}
-
-// ☁️ Weather 
-if (
-  text.includes("weather in") ||
-  text.includes("temperature in") ||
-  text.includes("rain in") ||
-  text.includes("wind in") ||
-  text.includes("climate in") ||
-  text.includes("humidity in") ||
-  text.includes("fog in") ||
-  text.includes("storm in")
-) {
-  const cleaned = text.replace(/(weather|temperature|rain|wind|climate|humidity|fog|storm) in/gi, "").trim();
-  return getWeather(cleaned);
-}
-
-// 🪙 Crypto Price Queries
-if (text.includes("price of") || text.includes("rate of") || text.includes("value of") || text.includes("price")) {
-  const cleaned = text.replace(/price of|rate of|value of|price/gi, "").trim();
-  return getCryptoPrice(cleaned);
-}
+  // 🪙 Crypto Price Queries
+  if (/\b(price of|rate of|value of|price)\b/.test(text)) {
+    const cleaned = text.replace(/price of|rate of|value of|price/gi, "").trim();
+    return getCryptoPrice(cleaned);
+  }
 
   // 📌 Reminders
   if (text.includes("remind me to")) {
@@ -519,12 +501,11 @@ if (text.includes("price of") || text.includes("rate of") || text.includes("valu
   }
 
   // 💬 Greetings & Common Questions
-  if (/hello|hi|hey/.test(text)) return respond("Hello! How can I help?");
+  if (/\b(hello|hi|hey)\b/.test(text)) return respond("Hello! How can I help?");
   if (text.includes("how are you")) return respond("I'm great, thanks!");
   if (text.includes("time")) return respond("It's " + new Date().toLocaleTimeString());
   if (text.includes("date")) return respond("Today is " + new Date().toLocaleDateString());
   if (text.includes("your name")) return respond("I am HXN, your AI assistant.");
-
 
   // 📰 News
   if (text.includes("latest news") || text.includes("news update")) return getNews();
@@ -539,7 +520,7 @@ if (text.includes("price of") || text.includes("rate of") || text.includes("valu
   if (text.includes("trivia") || text.includes("quiz") || text.includes("ask me a question")) return getTrivia();
 
   // 📖 Wikipedia-style queries
-  if (/what is|who is|tell me about|explain/.test(text)) {
+  if (/\b(what is|who is|tell me about|explain)\b/.test(text)) {
     const query = text.replace(/what is|who is|tell me about|explain/, "").trim();
     return getWikipediaSummary(query, fallbackToGoogle);
   }
@@ -555,7 +536,6 @@ if (text.includes("price of") || text.includes("rate of") || text.includes("valu
   getWikipediaSummary(text, fallbackToGoogle);
 }
 
-// 🔍 Fallback to Google if Wikipedia fails
 function fallbackToGoogle(found) {
   if (!found) {
     const query = document.getElementById("user-text").textContent;
@@ -563,5 +543,3 @@ function fallbackToGoogle(found) {
     openLink(`https://www.google.com/search?q=${encodeURIComponent(query)}`);
   }
 }
-
-
