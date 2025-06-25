@@ -196,30 +196,37 @@ function extractMainTopic(text) {
 
 // === API HANDLERS ===
 function getWikipediaSummary(query, callback) {
-  const formattedQuery = query.trim().replace(/\s+/g, '_'); // e.g., "shaniwar wada" → "Shaniwar_Wada"
+  const formattedQuery = query.trim().replace(/\s+/g, '_');
 
+  // Step 1: Try to fetch the direct summary
   fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(formattedQuery)}`)
-    .then(response => response.json())
+    .then(res => res.json())
     .then(data => {
-      if (data.type === "disambiguation") {
-        respond(`🔍 "${query}" has multiple meanings. Please be more specific.`);
-        return callback && callback(false);
-      }
-
       if (data.extract) {
         respond(`📘 ${data.title}: ${data.extract}`);
         return callback && callback(true);
       }
 
-      respond(`😕 I couldn’t find a summary for "${query}".`);
-      return callback && callback(false);
+      // Step 2: Fallback search using Wikipedia search suggestions
+      return fetch(`https://en.wikipedia.org/w/api.php?action=opensearch&search=${encodeURIComponent(query)}&limit=1&namespace=0&format=json&origin=*`)
+        .then(res => res.json())
+        .then(([searchTerm, results]) => {
+          if (!results.length) {
+            respond(`❌ I couldn’t find any info on "${query}".`);
+            return callback && callback(false);
+          }
+
+          const bestMatch = results[0];
+          // Retry summary with best match
+          getWikipediaSummary(bestMatch, callback);
+        });
     })
-    .catch((err) => {
-      console.error("Wikipedia fetch error:", err);
-      respond("❌ Sorry, I couldn’t connect to Wikipedia.");
+    .catch(() => {
+      respond("❌ I couldn’t reach Wikipedia right now.");
       return callback && callback(false);
     });
 }
+
 
 async function loadAllCoinsWithNames() {
   try {
