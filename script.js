@@ -536,10 +536,11 @@ if (/\b(weather|temperature|rain|wind|climate|humidity|fog|storm|sunrise|sunset)
   if (text.includes("trivia") || text.includes("quiz") || text.includes("ask me a question")) return getTrivia();
 
   // 📖 Wikipedia-style queries
-  if (/\b(what is|who is|tell me about|explain)\b/.test(text)) {
-    const query = text.replace(/what is|who is|tell me about|explain/, "").trim();
-    return getWikipediaSummary(query, fallbackToGoogle);
-  }
+  const broadMatch = text.match(/(?:who is|what is|which is|tell me about|explain|where is|when was|why is|how (?:does|is|did|was|are|do|can)?)\s+(.*)/i);
+if (broadMatch) {
+  const query = broadMatch[1].trim();
+  return getWikipediaSummary(query, fallbackToGoogle);
+}
 
   // 🎵 YouTube
   if (text.startsWith("play ")) return openLink(`https://www.youtube.com/results?search_query=${encodeURIComponent(text.replace("play ", ""))}`);
