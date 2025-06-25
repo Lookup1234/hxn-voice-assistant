@@ -458,10 +458,21 @@ function respondToCommand(text) {
 
 
 // === Command Handler ===
-function respondToCommand(text) {
+unction respondToCommand(text) {
   text = text.toLowerCase().trim();
   closeIframe();
+  hideCoinSearchBox();
 
+  // Voice commands
+  if (text.includes("stop listening") || text.includes("mute")) {
+    stopListening();
+    return respond("🔇 Muted.");
+  }
+
+  if (text.includes("start listening") || text.includes("wake up")) {
+    startListening();
+    return respond("🎙️ Listening again.");
+  }
   // 🧠 Memory Features
 function respondToCommand(text) {
   text = text.toLowerCase().trim();
