@@ -568,6 +568,64 @@ if (broadMatch) {
   return getWikipediaSummary(query, fallbackToGoogle);
 }
 
+// 🎵 Hindi Song Play Command
+if (text.startsWith("play ")) {
+  const songName = text.replace("play ", "").trim();
+
+  if (!songName || songName === "song" || songName === "a song") {
+    respond("🎶 Please say a song name, like 'Play Tum Hi Ho'.");
+    return;
+  }
+
+  fetch(`https://musicapi-m4ka.onrender.com/api/songs?search=${encodeURIComponent(songName)}`)
+    .then(res => res.json())
+    .then(data => {
+      const song = data?.data?.[0];
+      if (!song || !song.downloadUrl?.[4]?.url) {
+        respond(`❌ Sorry, I couldn't find "${songName}". Try another song.`);
+        return;
+      }
+
+      const audioUrl = song.downloadUrl[4].url; // 160 kbps version
+      if (musicPlayer) {
+        musicPlayer.pause();
+      }
+      musicPlayer = new Audio(audioUrl);
+      musicPlayer.play();
+
+      respond(`🎵 Playing "${song.name}" by ${song.primaryArtists}`);
+    })
+    .catch(err => {
+      console.error("❌ Music API error:", err);
+      respond("❌ I encountered a problem trying to play music.");
+    });
+  return;
+}
+
+// ⏹️ Pause Music
+if (text.includes("pause music") || text.includes("stop song")) {
+  if (musicPlayer) {
+    musicPlayer.pause();
+    respond("⏸️ Music paused.");
+  } else {
+    respond("🔇 No music is playing right now.");
+  }
+  return;
+}
+
+// 🛑 Stop Music
+if (text.includes("stop music") || text.includes("turn off music")) {
+  if (musicPlayer) {
+    musicPlayer.pause();
+    musicPlayer = null;
+    respond("🛑 Music stopped.");
+  } else {
+    respond("There's no music playing.");
+  }
+  return;
+}
+
+
   // 🎵 YouTube
   if (text.startsWith("play ")) return openLink(`https://www.youtube.com/results?search_query=${encodeURIComponent(text.replace("play ", ""))}`);
 
