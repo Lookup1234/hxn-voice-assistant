@@ -556,6 +556,6 @@ function fallbackToGoogle(found) {
   if (!found) {
     const query = document.getElementById("user-text").textContent;
     respond(`I didn’t find it on Wikipedia. Searching Google for "${query}"`);
-    openLink(`https://www.google.com/search?q=${encodeURIComponent(query)}`);
+    window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank');
   }
 }
