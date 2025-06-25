@@ -2,11 +2,21 @@ let recognition;
 let isListening = false;
 let openedWindows = [];
 let allCoins = [];
-let lastJokeCategory = "Any"; // default
+let lastJokeCategory = "Any";
+let musicPlayer = null;
 
 const reminders = [];
 
-// Speech Recognition start
+const playSound = (file) => {
+  const audio = new Audio(`/sounds/${file}`);
+  audio.play();
+};
+
+window.onload = () => {
+  loadAllCoinsWithNames();
+};
+
+// 🎧 Voice Recognition
 function startListening() {
   if (isListening) return;
   recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
@@ -57,7 +67,6 @@ function speak(text, lang = "en") {
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = lang === "hi" ? "hi-IN" : "en-US";
 
-  // Optional: pick correct voice
   const voices = window.speechSynthesis.getVoices();
   const voiceMatch = voices.find(v => v.lang === utterance.lang);
   if (voiceMatch) utterance.voice = voiceMatch;
@@ -81,7 +90,6 @@ async function respond(text, langOverride = null) {
           format: "text"
         })
       });
-
       const data = await response.json();
       const translated = data.translatedText;
 
@@ -98,13 +106,8 @@ async function respond(text, langOverride = null) {
   }
 }
 
-
 function openLink(url) {
-  const frame = document.getElementById("ai-frame");
-  frame.src = url;
-  frame.style.display = "block";
-  const closeBtn = document.getElementById("close-frame-btn");
-  if (closeBtn) closeBtn.style.display = "inline-block";
+  window.open(url, '_blank');
 }
 
 function closeIframe() {
@@ -116,11 +119,34 @@ function closeIframe() {
 
 function closeAllOpenedWindows() {
   openedWindows = openedWindows.filter(win => {
-    if (!win.closed) { win.close(); return false; }
+    if (!win.closed) {
+      win.close();
+      return false;
+    }
     return false;
   });
   openedWindows = [];
 }
+
+function playMusic(query) {
+  const url = `https://saavn.dev/api/search/songs?query=${encodeURIComponent(query)}`;
+  fetch(url)
+    .then(res => res.json())
+    .then(data => {
+      const song = data?.data?.results?.[0];
+      if (song?.downloadUrl?.[4]?.link) {
+        const streamUrl = song.downloadUrl[4].link;
+        if (musicPlayer) musicPlayer.pause();
+        musicPlayer = new Audio(streamUrl);
+        musicPlayer.play();
+        respond(`🎵 Now playing: ${song.name} by ${song.primaryArtists}`);
+      } else {
+        respond("Couldn't find a matching song.");
+      }
+    })
+    .catch(() => respond("Music search failed."));
+}
+
 
 function setReminder(task, delayMs) {
   reminders.push({ task, time: Date.now() + delayMs });
