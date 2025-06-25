@@ -361,12 +361,12 @@ function getWeather(city) {
       const sunrise = new Date(daily.sunrise[0]).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       const sunset = new Date(daily.sunset[0]).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-      const summary = `🌤️ Today's weather in ${city}:
-- 🌡️ ${tMin}°C to ${tMax}°C
-- 🌧️ Rain: ${rain} mm
-- 💨 Max Wind: ${wind} km/h
-- 🌅 Sunrise: ${sunrise}
-- 🌇 Sunset: ${sunset}`;
+      const summary = `Here's the weather update for ${city} today:
+- Minimum temperature is ${tMin} degrees Celsius and maximum is ${tMax} degrees.
+- Expected rainfall is ${rain} millimeters.
+- Maximum wind speed could reach up to ${wind} kilometers per hour.
+- The sun will rise at ${sunrise} and set at ${sunset}.`;
+
 
       respond(summary);
     })
