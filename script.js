@@ -458,40 +458,16 @@ function respondToCommand(text) {
 
 
 // === Command Handler ===
-unction respondToCommand(text) {
-  text = text.toLowerCase().trim();
-  closeIframe();
-  hideCoinSearchBox();
-
-  // Voice commands
-  if (text.includes("stop listening") || text.includes("mute")) {
-    stopListening();
-    return respond("🔇 Muted.");
-  }
-
-  if (text.includes("start listening") || text.includes("wake up")) {
-    startListening();
-    return respond("🎙️ Listening again.");
-  }
-  // 🧠 Memory Features
 function respondToCommand(text) {
   text = text.toLowerCase().trim();
   closeIframe();
-  hideCoinSearchBox();
 
-  // Memory features
+  // 🧠 Memory Features
   if (text.startsWith("i like ")) return saveUserInterest(text.replace("i like ", "").trim());
   if (text.includes("what do i like") || text.includes("remember what i like")) return recallUserInterest();
   if (text.includes("forget what i like") || text.includes("clear memory")) return clearMemory();
 
-  // Greetings
-  if (/\b(hello|hi|hey)\b/.test(text)) return respond("Hello! How can I help?");
-  if (text.includes("how are you")) return respond("I'm great, thanks!");
-  if (text.includes("time")) return respond("It's " + new Date().toLocaleTimeString());
-  if (text.includes("date")) return respond("Today is " + new Date().toLocaleDateString());
-  if (text.includes("your name")) return respond("I am HXN, your AI assistant.");
-
-  // Joke
+  // 🤣 Jokes
   if (text.includes("tell me a joke") || text.includes("another joke")) {
     showJokeTypeButton();
     return getJoke(lastJokeCategory || "Any");
@@ -502,14 +478,19 @@ function respondToCommand(text) {
     return getJoke(jokeMatch[1]);
   }
 
-  // Weather
-  const weatherMatch = text.match(/\b(weather|temperature|climate|humidity|fog|rain|wind|storm) (in|at)? ?(.*)/i);
-  if (weatherMatch) {
-    const city = weatherMatch[3]?.trim() || "Pune";
-    return getWeather(city);
+  // ☁️ Weather
+  if (/\b(weather|temperature|rain|wind|climate|humidity|fog|storm) in\b/.test(text)) {
+    const cleaned = text.replace(/(weather|temperature|rain|wind|climate|humidity|fog|storm) in/gi, "").trim();
+    return getWeather(cleaned);
   }
 
-  // Reminder
+  // 🪙 Crypto Price Queries
+  if (/\b(price of|rate of|value of|price)\b/.test(text)) {
+    const cleaned = text.replace(/price of|rate of|value of|price/gi, "").trim();
+    return getCryptoPrice(cleaned);
+  }
+
+  // 📌 Reminders
   if (text.includes("remind me to")) {
     const m = text.match(/remind me to (.+) in (\d+) (second|seconds|minute|minutes|hour|hours)/);
     if (!m) return respond("Say: 'remind me to drink water in 10 minutes'");
@@ -519,47 +500,46 @@ function respondToCommand(text) {
     return respond(`Reminder set for ${task} in ${amt} ${unit}`);
   }
 
-  // Dictionary
+  // 💬 Greetings & Common Questions
+  if (/\b(hello|hi|hey)\b/.test(text)) return respond("Hello! How can I help?");
+  if (text.includes("how are you")) return respond("I'm great, thanks!");
+  if (text.includes("time")) return respond("It's " + new Date().toLocaleTimeString());
+  if (text.includes("date")) return respond("Today is " + new Date().toLocaleDateString());
+  if (text.includes("your name")) return respond("I am HXN, your AI assistant.");
+
+  // 📰 News
+  if (text.includes("latest news") || text.includes("news update")) return getNews();
+
+  // 📚 Definitions
   if (text.startsWith("define ") || text.startsWith("definition of ")) {
-    const word = text.replace(/define |definition of /, "").trim();
+    const word = text.split(" ").slice(1).join(" ");
     return getDefinition(word);
   }
 
-  // Trivia
+  // ❓ Trivia
   if (text.includes("trivia") || text.includes("quiz") || text.includes("ask me a question")) return getTrivia();
 
-  // Crypto Price
-  if (text.includes("bitcoin") || text.includes("ethereum") || text.includes("dogecoin") || text.includes("crypto")) {
-    return getCryptoPrice(text);
-  }
-
-  // Stock Price
-  if (text.includes("tcs share price") || text.includes("stock price of tcs")) {
-    respond("Fetching stock data from Yahoo..."); // Placeholder
-    return openLink("https://finance.yahoo.com/quote/TCS.BO/");
-  }
-
-  // News
-  if (text.includes("news") || text.includes("latest headlines") || text.includes("today's news")) {
-    return getNews();
-  }
-
-  // YouTube (play music or video)
-  if (text.startsWith("play ")) {
-    const query = text.replace("play ", "");
-    return openLink(`https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`);
-  }
-
-  // Voice commands
-  if (text.includes("stop listening") || text.includes("mute")) return stopListening(), respond("Muted.");
-  if (text.includes("start listening") || text.includes("wake up")) return startListening(), respond("Listening again.");
-
-  // Wikipedia Queries
-  if (/\b(what is|who is|tell me about|explain|where is)\b/.test(text)) {
-    const query = text.replace(/what is|who is|tell me about|explain|where is/, "").trim();
+  // 📖 Wikipedia-style queries
+  if (/\b(what is|who is|tell me about|explain)\b/.test(text)) {
+    const query = text.replace(/what is|who is|tell me about|explain/, "").trim();
     return getWikipediaSummary(query, fallbackToGoogle);
   }
 
-  // Fallback: Try Wikipedia → if not found, use Google
+  // 🎵 YouTube
+  if (text.startsWith("play ")) return openLink(`https://www.youtube.com/results?search_query=${encodeURIComponent(text.replace("play ", ""))}`);
+
+  // 🎙️ Voice control
+  if (text.includes("stop listening") || text.includes("mute")) return stopListening(), respond("Muted.");
+  if (text.includes("start listening") || text.includes("wake up")) return startListening(), respond("Listening again.");
+
+  // 🌐 Fallback to Wikipedia → then Google
   getWikipediaSummary(text, fallbackToGoogle);
+}
+
+function fallbackToGoogle(found) {
+  if (!found) {
+    const query = document.getElementById("user-text").textContent;
+    respond(`I didn’t find it on Wikipedia. Searching Google for "${query}"`);
+    openLink(`https://www.google.com/search?q=${encodeURIComponent(query)}`);
+  }
 }
