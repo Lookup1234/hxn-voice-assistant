@@ -196,19 +196,28 @@ function extractMainTopic(text) {
 
 // === API HANDLERS ===
 function getWikipediaSummary(query, callback) {
-  fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`)
+  const formattedQuery = query.trim().replace(/\s+/g, '_'); // e.g., "shaniwar wada" → "Shaniwar_Wada"
+
+  fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(formattedQuery)}`)
     .then(response => response.json())
     .then(data => {
-      if (data.extract) {
-        respond(data.extract); // Uses smart detection and speaks accordingly
-        if (callback) callback(true);
-      } else {
-        if (callback) callback(false);
+      if (data.type === "disambiguation") {
+        respond(`🔍 "${query}" has multiple meanings. Please be more specific.`);
+        return callback && callback(false);
       }
+
+      if (data.extract) {
+        respond(`📘 ${data.title}: ${data.extract}`);
+        return callback && callback(true);
+      }
+
+      respond(`😕 I couldn’t find a summary for "${query}".`);
+      return callback && callback(false);
     })
-    .catch(() => {
-      respond("Sorry, I had trouble reaching Wikipedia.");
-      if (callback) callback(false);
+    .catch((err) => {
+      console.error("Wikipedia fetch error:", err);
+      respond("❌ Sorry, I couldn’t connect to Wikipedia.");
+      return callback && callback(false);
     });
 }
 
