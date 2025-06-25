@@ -4,6 +4,7 @@ let openedWindows = [];
 let allCoins = [];
 let lastJokeCategory = "Any";
 let musicPlayer = null;
+let isMusicMode = false;
 
 const reminders = [];
 
@@ -568,8 +569,22 @@ if (broadMatch) {
   return getWikipediaSummary(query, fallbackToGoogle);
 }
 
-// 🎵 Hindi Song Play Command
-if (text.startsWith("play ")) {
+// 🎧 Activate Music Mode
+if (text.includes("music mode") || text.includes("enter music mode")) {
+  isMusicMode = true;
+  respond("🎧 Music mode activated. Please say the audio song you want to play.");
+  return;
+}
+
+// 🚫 Exit Music Mode
+if (text.includes("exit music mode") || text.includes("leave music mode")) {
+  isMusicMode = false;
+  respond("🛑 Exiting music mode.");
+  return;
+}
+
+// 🎵 Audio Song via Music API (Only in Music Mode)
+if (isMusicMode && text.startsWith("play ")) {
   const songName = text.replace("play ", "").trim();
 
   if (!songName || songName === "song" || songName === "a song") {
@@ -602,32 +617,17 @@ if (text.startsWith("play ")) {
   return;
 }
 
-// ⏹️ Pause Music
-if (text.includes("pause music") || text.includes("stop song")) {
-  if (musicPlayer) {
-    musicPlayer.pause();
-    respond("⏸️ Music paused.");
-  } else {
-    respond("🔇 No music is playing right now.");
+// 🎵 YouTube fallback if not in Music Mode
+if (!isMusicMode && text.startsWith("play ")) {
+  const query = text.replace("play ", "").trim();
+  if (!query) {
+    respond("🎬 Please say a song or video name.");
+    return;
   }
+  respond(`🎬 Searching YouTube for: ${query}`);
+  window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`, '_blank');
   return;
 }
-
-// 🛑 Stop Music
-if (text.includes("stop music") || text.includes("turn off music")) {
-  if (musicPlayer) {
-    musicPlayer.pause();
-    musicPlayer = null;
-    respond("🛑 Music stopped.");
-  } else {
-    respond("There's no music playing.");
-  }
-  return;
-}
-
-
-  // 🎵 YouTube
-  if (text.startsWith("play ")) return openLink(`https://www.youtube.com/results?search_query=${encodeURIComponent(text.replace("play ", ""))}`);
 
   // 🎙️ Voice control
   if (text.includes("stop listening") || text.includes("mute")) return stopListening(), respond("Muted.");
