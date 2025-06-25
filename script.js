@@ -495,10 +495,10 @@ function respondToCommand(text) {
   }
 
   // ☁️ Weather
-  if (/\b(weather|temperature|rain|wind|climate|humidity|fog|storm) in\b/.test(text)) {
-    const cleaned = text.replace(/(weather|temperature|rain|wind|climate|humidity|fog|storm) in/gi, "").trim();
-    return getWeather(cleaned);
-  }
+if (/\b(weather|temperature|rain|wind|climate|humidity|fog|storm|sunrise|sunset) in\b/.test(text)) {
+  const cleaned = text.replace(/\b(weather|temperature|rain|wind|climate|humidity|fog|storm|sunrise|sunset) in\b/gi, "").trim();
+  return getWeather(cleaned);
+}
 
   // 🪙 Crypto Price Queries
   if (/\b(price of|rate of|value of|price)\b/.test(text)) {
