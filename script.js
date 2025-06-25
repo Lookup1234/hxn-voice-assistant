@@ -569,52 +569,54 @@ if (broadMatch) {
   return getWikipediaSummary(query, fallbackToGoogle);
 }
 
-// 🎧 Activate Music Mode
+// 🎧 Music Mode Entry
 if (text.includes("music mode") || text.includes("enter music mode")) {
   isMusicMode = true;
-  respond("🎧 Music mode activated. Please say the audio song you want to play.");
-  return;
+  return respond("🎧 Music mode activated. Please say the audio song you want to play.");
 }
 
-// 🚫 Exit Music Mode
-if (text.includes("exit music mode") || text.includes("leave music mode")) {
-  isMusicMode = false;
-  respond("🛑 Exiting music mode.");
-  return;
-}
-
-// 🎵 Audio Song via Music API (Only in Music Mode)
+// 🎵 Handle Music Request
 if (isMusicMode && text.startsWith("play ")) {
   const songName = text.replace("play ", "").trim();
-
-  if (!songName || songName === "song" || songName === "a song") {
-    respond("🎶 Please say a song name, like 'Play Tum Hi Ho'.");
-    return;
+  if (!songName || songName === "song") {
+    return respond("🎶 Please say a specific song name like 'Play Tum Hi Ho'.");
   }
 
   fetch(`https://musicapi-m4ka.onrender.com/api/songs?search=${encodeURIComponent(songName)}`)
     .then(res => res.json())
     .then(data => {
       const song = data?.data?.[0];
-      if (!song || !song.downloadUrl?.[4]?.url) {
-        respond(`❌ Sorry, I couldn't find "${songName}". Try another song.`);
-        return;
+      if (song?.downloadUrl?.[4]?.url) {
+        if (musicPlayer) musicPlayer.pause();
+        musicPlayer = new Audio(song.downloadUrl[4].url);
+        musicPlayer.play();
+        respond(`🎵 Playing "${song.name}" by ${song.primaryArtists}`);
+      } else {
+        respond(`❌ Couldn't find audio. Searching YouTube for: ${songName}`);
+        openLink(`https://www.youtube.com/results?search_query=${encodeURIComponent(songName)}`);
       }
-
-      const audioUrl = song.downloadUrl[4].url; // 160 kbps version
-      if (musicPlayer) {
-        musicPlayer.pause();
-      }
-      musicPlayer = new Audio(audioUrl);
-      musicPlayer.play();
-
-      respond(`🎵 Playing "${song.name}" by ${song.primaryArtists}`);
     })
-    .catch(err => {
-      console.error("❌ Music API error:", err);
-      respond("❌ I encountered a problem trying to play music.");
+    .catch(() => {
+      respond("❌ Music API failed. Trying YouTube...");
+      openLink(`https://www.youtube.com/results?search_query=${encodeURIComponent(songName)}`);
     });
   return;
+}
+
+// 🛑 Exit Music Mode
+if (isMusicMode && (
+  text.includes("exit music mode") ||
+  text.includes("stop music mode") ||
+  text.includes("stop music")
+)) {
+  isMusicMode = false;
+  if (musicPlayer) musicPlayer.pause();
+  return respond("🛑 Exiting music mode.");
+}
+
+// 🧱 Prevent fallback triggers during music mode
+if (isMusicMode) {
+  return respond("🎵 Please say a song name starting with 'Play...'");
 }
 
 // 🎵 YouTube fallback if not in Music Mode
