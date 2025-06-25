@@ -569,17 +569,17 @@ if (broadMatch) {
   return getWikipediaSummary(query, fallbackToGoogle);
 }
 
-// 🎧 Music Mode Entry
+// 🎧 Music Mode Activation
 if (text.includes("music mode") || text.includes("enter music mode")) {
   isMusicMode = true;
   return respond("🎧 Music mode activated. Please say the audio song you want to play.");
 }
 
-// 🎵 Handle Music Request
+// 🎵 Play Song in Music Mode
 if (isMusicMode && text.startsWith("play ")) {
   const songName = text.replace("play ", "").trim();
-  if (!songName || songName === "song") {
-    return respond("🎶 Please say a specific song name like 'Play Tum Hi Ho'.");
+  if (!songName || songName.toLowerCase() === "song") {
+    return respond("🎶 Please say the song name like 'Play Tum Hi Ho'.");
   }
 
   fetch(`https://musicapi-m4ka.onrender.com/api/songs?search=${encodeURIComponent(songName)}`)
@@ -590,14 +590,15 @@ if (isMusicMode && text.startsWith("play ")) {
         if (musicPlayer) musicPlayer.pause();
         musicPlayer = new Audio(song.downloadUrl[4].url);
         musicPlayer.play();
-        respond(`🎵 Playing "${song.name}" by ${song.primaryArtists}`);
+        respond(`🎵 Now playing "${song.name}" by ${song.primaryArtists}`);
       } else {
-        respond(`❌ Couldn't find audio. Searching YouTube for: ${songName}`);
+        respond(`❌ Couldn't find "${songName}" in music API. Trying YouTube...`);
         openLink(`https://www.youtube.com/results?search_query=${encodeURIComponent(songName)}`);
       }
     })
-    .catch(() => {
-      respond("❌ Music API failed. Trying YouTube...");
+    .catch(err => {
+      console.error("❌ Music fetch failed:", err);
+      respond("❌ I had trouble finding the song. Opening YouTube instead.");
       openLink(`https://www.youtube.com/results?search_query=${encodeURIComponent(songName)}`);
     });
   return;
@@ -611,12 +612,12 @@ if (isMusicMode && (
 )) {
   isMusicMode = false;
   if (musicPlayer) musicPlayer.pause();
-  return respond("🛑 Exiting music mode.");
+  return respond("🛑 Exiting music mode. Let me know if you need anything else.");
 }
 
-// 🧱 Prevent fallback triggers during music mode
+// ⛔ Block all unrelated queries while in music mode
 if (isMusicMode) {
-  return respond("🎵 Please say a song name starting with 'Play...'");
+  return respond("🎧 Say a song name starting with 'Play ...' or say 'exit music mode' to return.");
 }
 
 // 🎵 YouTube fallback if not in Music Mode
